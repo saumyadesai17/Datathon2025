@@ -17,14 +17,14 @@ export default function Navbar() {
               <Link href="/how-it-works" className="text-gray-300 hover:text-white transition-colors">
                 How It Works
               </Link>
-              <Link href="/case-studies" className="text-gray-300 hover:text-white transition-colors">
-                Case Studies
-              </Link>
               <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors">
                 Pricing
               </Link>
+              <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
+                Contact Us
+              </Link>
               <Link 
-                href="/contact" 
+                href="/auth" 
                 className="bg-gradient-to-r from-[#00f3ff] to-[#00ff9d] text-black font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
               >
                 Get Started

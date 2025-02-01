@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 const menuItems = [
   { path: '/dashboard', label: 'Overview', icon: '📊' },
   { path: '/dashboard/analytics', label: 'Analytics', icon: '📈' },
+  { path: '/dashboard/forecasting', label: 'Forecasting', icon: '🎯' },
   { path: '/dashboard/upload', label: 'Upload Data', icon: '📤' },
   { path: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
 ];

@@ -44,3 +44,24 @@ body {
 .hero-gradient {
   background: radial-gradient(circle at center, rgba(0, 243, 255, 0.15) 0%, rgba(5, 5, 5, 0) 70%);
 }
+
+/* Leaflet map dark theme */
+.leaflet-container {
+  background: #1a1a1a !important;
+}
+
+.leaflet-tile {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%) !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: rgba(0, 0, 0, 0.8) !important;
+  color: white !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.leaflet-popup-tip {
+  background: rgba(0, 0, 0, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
