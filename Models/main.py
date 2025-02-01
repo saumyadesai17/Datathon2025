@@ -464,8 +464,6 @@ async def login(user: LoginRequest):
     # If no match found, return unauthorized error
     raise HTTPException(status_code=401, detail="Invalid phone number or password")
 
-
-
 # Function to get the most sold item for a given outlet CSV file
 def get_most_sold_item(file_path):
     DATA_DIR = os.path.abspath("DATA")
@@ -491,13 +489,14 @@ def get_most_sold_item(file_path):
         }
     except Exception as e:
         return {"error":str(e)}
+
 @app.get("/most_sold_items")
 def most_sold_items():
     DATA_DIR = os.path.abspath("DATA")
     dadar_file = os.path.join(DATA_DIR, "Dadar.csv")
-    andheri_file = os.path.join(DATA_DIR, "Dadar.csv")
-    borivali_file = os.path.join(DATA_DIR, "Dadar.csv")
-    bhayander_file = os.path.join(DATA_DIR, "Dadar.csv")
+    andheri_file = os.path.join(DATA_DIR, "Andheri.csv")
+    borivali_file = os.path.join(DATA_DIR, "Borivali.csv")
+    bhayander_file = os.path.join(DATA_DIR, "Bhayander.csv")
     outlets = {
         "Dadar": dadar_file,
         "Andheri": andheri_file,
@@ -512,10 +511,70 @@ def most_sold_items():
 
     return results
 
-     
-@app.get("/get_sales_insights/")
-async def sales_respond():
-    pass
+class SalesResponse(BaseModel):
+    filename: str
+    total_sales: float
+    total_orders: int
+    average_order_value: float
+
+@app.get("/get_total_sales/", response_model=List[SalesResponse])
+async def sales_respond() -> List[SalesResponse]:
+    """
+    Calculate total sales from Order_Bill for each CSV file in the DATA directory.
+    Returns a list of SalesResponse objects containing filename and sales metrics.
+    """
+    try:
+        DATA_DIR = os.path.abspath("DATA")
+        # Get list of all CSV files in the DATA directory
+        csv_files = [f for f in os.listdir(DATA_DIR) if f.endswith('.csv')]
+        
+        if not csv_files:
+            raise HTTPException(status_code=404, detail="No CSV files found in DATA directory")
+        
+        result = []
+        
+        # Process each CSV file
+        for filename in csv_files:
+            file_path = os.path.join(DATA_DIR, filename)
+            try:
+                # Skip menu.csv as it doesn't contain order data
+                if filename.lower() == 'menu.csv':
+                    continue
+                    
+                # Read CSV file
+                df = pd.read_csv(file_path)
+                
+                # Check if Order_Bill column exists
+                if 'Order_Bill' not in df.columns:
+                    print(f"Warning: Order_Bill column not found in {filename}")
+                    continue
+                
+                # Calculate total sales from Order_Bill column
+                total_sales = df['Order_Bill'].sum()
+                
+                # Get additional statistics
+                order_count = len(df)
+                avg_order_value = float(total_sales) / order_count if order_count > 0 else 0
+                
+                result.append(SalesResponse(
+                    filename=filename,
+                    total_sales=float(total_sales),
+                    total_orders=order_count,
+                    average_order_value=round(avg_order_value, 2)
+                ))
+                
+            except pd.errors.EmptyDataError:
+                print(f"Warning: {filename} is empty")
+                continue
+            except Exception as e:
+                print(f"Error processing {filename}: {str(e)}")
+                continue
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500,detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
