@@ -6,11 +6,11 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 import glob
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+import joblib
 
-# Define a new model for the menu recommendation details
 class MenuRecommendation(BaseModel):
     menu_id: int
     menu_name: str
@@ -26,6 +26,7 @@ class RecommendationRequest(BaseModel):
     num_recommendations: Optional[int] = 5
 
 app = FastAPI()
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
@@ -34,6 +35,41 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
     allow_headers=["*"],  # Allow all headers
 )
+
+# Load all models and scalers
+models = {
+    "andheri": ("andheri.pkl", "scaler.pkl"),
+    "dadar": ("dadar.pkl", "scaler2.pkl"),
+    "borivali": ("borivali.pkl", "scaler3.pkl"),
+    "bhayander": ("bhayander.pkl", "scaler4.pkl"),
+}
+def generate_forecast(model_file, scaler_file):
+    """Generates a 30-day forecast using the given model and scaler."""
+    model = joblib.load(model_file)
+    scaler = joblib.load(scaler_file)
+
+    last_date = datetime.today()
+    forecast_dates = pd.date_range(start=last_date + timedelta(days=1), periods=30, freq='D')
+
+    # Generate features for prediction
+    future_features = pd.DataFrame({
+        'dayofweek': forecast_dates.dayofweek,
+        'month': forecast_dates.month,
+        'year': forecast_dates.year,
+        'day': forecast_dates.day,
+        'is_weekend': (forecast_dates.dayofweek >= 5).astype(int),
+        'is_month_start': forecast_dates.is_month_start.astype(int),
+        'is_month_end': forecast_dates.is_month_end.astype(int)
+    }, index=forecast_dates)
+
+    # Scale features and predict
+    X_future_scaled = scaler.transform(future_features)
+    predictions = model.predict(X_future_scaled)
+
+    # Format the result
+    return {date.strftime('%Y-%m-%d'): float(pred) for date, pred in zip(forecast_dates, predictions)}
+
+
 class RecommenderSystem:
     def __init__(self):
         self.df = None
@@ -46,7 +82,7 @@ class RecommenderSystem:
         print(f"Looking for CSV files in: {data_path}")
         # Load all CSV files from the directory
         csv_files = glob.glob(os.path.join(data_path, "*.csv"))
-        print("Loading CSV files",csv_files)
+        print("Loading CSV files", csv_files)
         dfs = []
         
         for file in csv_files:
@@ -179,6 +215,64 @@ async def get_recommendations(request: RecommendationRequest):
         user_id=request.user_id,
         recommended_items=menu_recommendations
     )
+
+@app.get("/get_waiting")
+async def get_waiting_time():
+    """
+    This route iterates through each CSV file in the Data folder,
+    calculates the waiting time (difference between Order_Complete_Time and Order_Placed_Time)
+    in minutes for each order, computes the average waiting time for the file/outlet,
+    and returns a JSON response excluding any outlets that encountered errors.
+    """
+    data_path = os.path.abspath("Data")
+    csv_files = glob.glob(os.path.join(data_path, "*.csv"))
+    results = {}
+
+    for file in csv_files:
+        try:
+            df = pd.read_csv(file)
+            # Convert the time columns to datetime objects
+            df["Order_Placed_Time"] = pd.to_datetime(df["Order_Placed_Time"], errors='coerce')
+            df["Order_Complete_Time"] = pd.to_datetime(df["Order_Complete_Time"], errors='coerce')
+
+            # Drop any rows where conversion failed
+            df = df.dropna(subset=["Order_Placed_Time", "Order_Complete_Time"])
+
+            # Calculate waiting time in minutes
+            df["waiting_time"] = (df["Order_Complete_Time"] - df["Order_Placed_Time"]).dt.total_seconds() / 60
+
+            # Compute the average waiting time for this CSV file/outlet
+            avg_waiting_time = df["waiting_time"].mean()
+
+            # Use the file name (without extension) as the outlet name
+            outlet_name = os.path.splitext(os.path.basename(file))[0]
+
+            # Only add valid results (ignoring NaN cases)
+            if not pd.isna(avg_waiting_time):
+                results[outlet_name] = round(avg_waiting_time, 2)
+
+        except Exception as e:
+            # Ignore errors and move on to the next file
+            continue
+
+    return results
+
+@app.get("/forecast")
+def get_forecast(location: str = None):
+    if location:
+        # Return forecast for a specific location
+        if location not in models:
+            return {"error": "Invalid location. Choose from: andheri, dadar, borivali, bhayander"}
+        
+        model_file, scaler_file = models[location]
+        forecast = generate_forecast(model_file, scaler_file)
+        return {"location": location, "forecast": forecast}
+
+    # If no location is provided, return forecasts for all locations
+    forecasts = {loc: generate_forecast(*files) for loc, files in models.items()}
+    return {"forecast":forecasts}
+
+
 
 if __name__ == "__main__":
     import uvicorn
