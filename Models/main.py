@@ -507,12 +507,12 @@ def most_sold_items():
     dadar_file = os.path.join(DATA_DIR, "Dadar.csv")
     andheri_file = os.path.join(DATA_DIR, "Andheri.csv")
     borivali_file = os.path.join(DATA_DIR, "Borivali.csv")
-    bhayander_file = os.path.join(DATA_DIR, "Bhayandar.csv")
+    bhayandar_file = os.path.join(DATA_DIR, "Bhayandar.csv")
     outlets = {
         "Dadar": dadar_file,
         "Andheri": andheri_file,
         "Borivali": borivali_file,
-        "Bhayandar": bhayander_file
+        "Bhayandar": bhayandar_file
     }
 
     results = {}
