@@ -314,12 +314,11 @@ async def get_missing_locations():
     user_locations = []
     for file in os.listdir(data_path):
         if file.endswith(".csv"):
-            location_name = os.path.splitext(file)[0]  # Extract location name
+            location_name = os.path.splitext(file)[0]
             if location_name == "menu":
                 continue
             df = pd.read_csv(os.path.join(data_path, file))
-            #print(df)
-            user_locations.extend(df["User_Location"].tolist())  # Add all user locations
+            user_locations.extend(df["User_Location"].dropna().tolist())  # Remove NaN values
     
     # Step 3: Find Locations Where No Outlet Exists
     missing_locations = [loc for loc in user_locations if loc not in locations]
@@ -327,11 +326,21 @@ async def get_missing_locations():
     # Step 4: Count the Occurrences of Missing Locations
     missing_location_counts = Counter(missing_locations)
     
-    # Step 5: Sort the Counts in Descending Order
-    sorted_missing_location_counts = dict(sorted(missing_location_counts.items(), key=lambda item: item[1], reverse=True))
-
-    return {"missing_location_counts": sorted_missing_location_counts}
+    # Step 5: Fetch Latitude & Longitude for Each Location
+    location_data = {}
+    for location, count in missing_location_counts.items():
+        coords = get_lat_lon(location)
+        location_data[location] = {
+            "count": count,
+            "latitude": coords["latitude"],
+            "longitude": coords["longitude"]
+        }
     
+    return location_data
+
+@app.get("/get_sales_insights/")
+async def sales_respond():
+    pass
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
