@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --neon-blue: #00f3ff;
+  --neon-green: #00ff9d;
+  --neon-red: #ff0055;
+  --dark-bg: #050505;
+  --dark-card: #0a0a0a;
+}
+
+body {
+  background-color: var(--dark-bg);
+  color: #ffffff;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.neon-text {
+  text-shadow: 0 0 10px var(--neon-blue);
+}
+
+.gradient-text {
+  background: linear-gradient(to right, var(--neon-blue), var(--neon-green));
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}
+
+.float-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+.hero-gradient {
+  background: radial-gradient(circle at center, rgba(0, 243, 255, 0.15) 0%, rgba(5, 5, 5, 0) 70%);
+}
