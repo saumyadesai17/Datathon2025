@@ -1,3 +1,4 @@
+import ast
 from fastapi import FastAPI, HTTPException
 from fastapi.requests import Request  # Correct way to import request in FastAPI
 from fastapi.responses import JSONResponse  # Equivalent to Flas
@@ -33,9 +34,7 @@ class RecommendationResponse(BaseModel):
     user_id: int
     recommended_items: List[MenuRecommendation]
 
-class RecommendationRequest(BaseModel):
-    user_id: int
-    num_recommendations: Optional[int] = 5
+
 
 # Define request model for login
 class LoginRequest(BaseModel):
@@ -210,28 +209,69 @@ async def startup_event():
         menu_mapping = dict(zip(menu_df["Menu ID"], menu_df["Menu Name"]))
     except Exception as e:
         print(f"Error loading menu CSV: {e}")
+class RecommendationRequest(BaseModel):
+    Phone_Number: str
+    num_recommendations: Optional[int] = 5
+def get_user_id_by_phone(phone_number: str) -> Optional[int]:
+    """Search for the user_id based on Phone_Number in all CSV files inside the 'Data' folder."""
+    DATA_PATH = os.path.abspath("Data")
+    if not os.path.exists(DATA_PATH):
+        raise HTTPException(status_code=500, detail="Data folder not found")
 
+    # Loop through all CSV files in the Data directory
+    for file_name in os.listdir(DATA_PATH):
+        if file_name.endswith(".csv"):
+            file_path = os.path.join(DATA_PATH, file_name)
+            print(f"Checking file: {file_path}")  # Debugging
+
+            with open(file_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                
+                # Debug: Print detected column names
+                print(f"Columns found: {reader.fieldnames}")
+
+                for row in reader:
+                    # Debugging: Print each row being checked
+                    #print(f"Checking row: {row}")
+
+                    # Strip whitespace from phone number fields
+                    if row.get("Phone_Number", "").strip() == phone_number.strip():
+                        try:
+                            return int(row.get("User_ID", "").strip())   # Convert to int and return
+                        except ValueError:
+                            print(f"Invalid user_id format in row: {row}")  # Debugging
+
+    return None  # If not found
 @app.post("/recommend/", response_model=RecommendationResponse)
 async def get_recommendations(request: RecommendationRequest):
+    # Find user_id from phone number
+    user_id = get_user_id_by_phone(request.Phone_Number)
+    print(user_id)
+
+    if user_id is None or user_id == -1:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Fetch recommendations
     recommended_items, similarity_scores = recommender.get_recommendations(
-        request.user_id,
+        user_id,
         request.num_recommendations
     )
-    
-    # Map the recommended order IDs to menu names using the loaded menu_mapping
-    menu_recommendations = []
-    for menu_id, score in zip(recommended_items, similarity_scores):
-        menu_name = menu_mapping.get(menu_id, "Unknown Menu")
-        menu_recommendations.append(MenuRecommendation(
+
+    # Map recommended menu IDs to menu names (Assuming menu_mapping is predefined)
+    menu_recommendations = [
+        MenuRecommendation(
             menu_id=menu_id,
-            menu_name=menu_name,
+            menu_name=menu_mapping.get(menu_id, "Unknown Menu"),
             similarity_score=score
-        ))
-    
+        )
+        for menu_id, score in zip(recommended_items, similarity_scores)
+    ]
+
     return RecommendationResponse(
-        user_id=request.user_id,
+        user_id=user_id,
         recommended_items=menu_recommendations
     )
+
 
 @app.get("/get_waiting")
 async def get_waiting_time():
@@ -423,6 +463,54 @@ async def login(user: LoginRequest):
 
     # If no match found, return unauthorized error
     raise HTTPException(status_code=401, detail="Invalid phone number or password")
+
+
+
+# Function to get the most sold item for a given outlet CSV file
+def get_most_sold_item(file_path):
+    DATA_DIR = os.path.abspath("DATA")
+    menu_file = os.path.join(DATA_DIR, "menu.csv")
+    menu_df = pd.read_csv(menu_file)  # CSV should have 'Menu ID' and 'Menu Name' columns
+    menu_mapping = dict(zip(menu_df["Menu ID"], menu_df["Menu Name"]))
+    try:
+        df = pd.read_csv(file_path)
+        all_items = []
+
+        # Extract and count item occurrences
+        for order in df["Order_List"]:
+            item_list = ast.literal_eval(order)  # Convert string list to Python list
+            all_items.extend(item_list)
+
+        item_counts = Counter(all_items)
+        most_sold_item, max_count = item_counts.most_common(1)[0]
+
+        return {
+            "Most Sold Item ID": most_sold_item,
+            "Most Sold Item Name": menu_mapping.get(most_sold_item, "Unknown Item"),
+            "Count": max_count
+        }
+    except Exception as e:
+        return {"error":str(e)}
+@app.get("/most_sold_items")
+def most_sold_items():
+    DATA_DIR = os.path.abspath("DATA")
+    dadar_file = os.path.join(DATA_DIR, "Dadar.csv")
+    andheri_file = os.path.join(DATA_DIR, "Dadar.csv")
+    borivali_file = os.path.join(DATA_DIR, "Dadar.csv")
+    bhayander_file = os.path.join(DATA_DIR, "Dadar.csv")
+    outlets = {
+        "Dadar": dadar_file,
+        "Andheri": andheri_file,
+        "Borivali": borivali_file,
+        "Bhayander": bhayander_file
+    }
+
+    results = {}
+
+    for outlet, file in outlets.items():
+        results[outlet] = get_most_sold_item(file)
+
+    return results
 
      
 @app.get("/get_sales_insights/")
