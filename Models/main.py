@@ -1,18 +1,28 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.requests import Request  # Correct way to import request in FastAPI
+from fastapi.responses import JSONResponse  # Equivalent to Flas
 from typing import List, Optional
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 import glob
+import csv
+import secrets
 import os
 from datetime import datetime, timedelta
-from pydantic import BaseModel
+from pydantic import BaseModel,EmailStr
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
 from collections import Counter
 from geopy.geocoders import Nominatim
-
+class SignupRequest(BaseModel):
+    full_name: str
+    Phone_Number: str
+    email: EmailStr  # Ensures valid email format
+    location: str
+    password: str
+    confirm_password: str
 class MenuRecommendation(BaseModel):
     menu_id: int
     menu_name: str
@@ -26,6 +36,11 @@ class RecommendationResponse(BaseModel):
 class RecommendationRequest(BaseModel):
     user_id: int
     num_recommendations: Optional[int] = 5
+
+# Define request model for login
+class LoginRequest(BaseModel):
+    Phone_Number: str
+    password: str    
 
 app = FastAPI()
 
@@ -337,7 +352,79 @@ async def get_missing_locations():
         }
     
     return location_data
+@app.post("/signup")
+async def signup(user: SignupRequest):
+    # Validate password confirmation
+    if user.password != user.confirm_password:
+        raise HTTPException(status_code=400, detail="Passwords do not match")
 
+    # Define CSV file path
+    auth_path = os.path.abspath("Auth")
+    if not os.path.exists(auth_path):
+        os.makedirs(auth_path)
+
+    csv_file = os.path.join(auth_path, "user_signup.csv")
+
+    # Debugging: Print file path to verify its location
+    print(f"CSV file path: {csv_file}")
+
+    # Check if the file exists, create headers if missing
+    file_exists = os.path.exists(csv_file)
+
+    try:
+        with open(csv_file, 'a', newline='\n',encoding='utf-8') as f:
+            writer = csv.writer(f)
+
+            # If file is newly created, add headers
+            if not file_exists:
+                headers = ['full_name', 'Phone_Number', 'email', 'location', 'password', 'confirm_password']
+                writer.writerow(headers)
+
+            # Append user data
+            writer.writerow([
+                user.full_name,
+                user.Phone_Number,
+                user.email,
+                user.location,
+                user.password,
+                user.confirm_password
+            ])
+
+            f.flush()  # Force write the data to file immediately
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error writing to CSV: {e}")
+
+    return {"message": "User registered successfully"}
+
+@app.post("/login")
+async def login(user: LoginRequest):
+    AUTH_DIR = os.path.abspath("Auth")
+    SIGNUP_FILE = os.path.join(AUTH_DIR, "user_signup.csv")
+    LOGIN_FILE = os.path.join(AUTH_DIR, "user_login.csv")
+    # Check if signup file exists
+    if not os.path.exists(SIGNUP_FILE):
+        raise HTTPException(status_code=400, detail="No registered users found")
+
+    # Read the CSV file to check credentials
+    with open(SIGNUP_FILE, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row['Phone_Number'] == user.Phone_Number and row['password'] == user.password:
+                # Generate a random access token
+                access_token = secrets.token_hex(16)
+
+                # Store the access token in user_login.csv
+                with open(LOGIN_FILE, 'a', newline='\n', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    writer.writerow([user.Phone_Number, access_token])
+
+                return {"message": "Login successful", "access_token": access_token}
+
+    # If no match found, return unauthorized error
+    raise HTTPException(status_code=401, detail="Invalid phone number or password")
+
+     
 @app.get("/get_sales_insights/")
 async def sales_respond():
     pass
