@@ -1,43 +1,62 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TextInput, FlatList, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import axios from "axios";
 
 const RecommendationScreen = () => {
-    const navigation = useNavigation('')
-    
-  const burgers = [
-    {
-        menu_id: '1',
-        menu_name: 'Medium Coca-Cola',
-        image: require('../assets/images/berger.png')
-    },
-    {
-        menu_id: '2',
-        menu_name: 'Strawberry Milkshake',
-        image: require('../assets/images/berger2.png')
-    },
+  const navigation = useNavigation();
+  const [recommendations, setRecommendations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const userId = 1186; // Pass the required user_id
 
-  ];
+  useEffect(() => {
+    fetchRecommendations();
+  }, []);
+
+  const fetchRecommendations = async () => {
+    try {
+      const response = await axios.post("http://192.168.135.50:8000/recommend/", {
+        user_id: userId,
+        num_recommendations: 5,
+      });
+
+      setRecommendations(response.data.recommended_items);
+    } catch (error) {
+      console.error("Error fetching recommendations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderBurgerItem = ({ item }) => (
     <View style={styles.burgerCard}>
-        {/* <Text>Recommendation</Text> */}
-      <Image source={item.image} style={styles.burgerImage} />
+      <Image
+        source={require("../assets/images/berger.png")}
+        style={styles.burgerImage}
+      />
       <Text style={styles.burgerName}>{item.menu_name}</Text>
-      <Text style={styles.restaurantName}>{item.restaurant}</Text>
-
+      <Text style={styles.similarityScore}>
+        Similarity Score: {item.similarity_score.toFixed(2)}
+      </Text>
     </View>
   );
 
   return (
-    
     <View style={styles.mainContainer}>
       <FlatList
-        data={burgers}
+        data={recommendations}
         renderItem={renderBurgerItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.menu_id.toString()}
         numColumns={2}
         contentContainerStyle={styles.flatListContent}
         ListHeaderComponent={
@@ -52,23 +71,20 @@ const RecommendationScreen = () => {
             <View style={styles.searchContainer}>
               <View style={styles.searchBar}>
                 <Ionicons name="search" size={20} color="#666" />
-                <TextInput
-                  placeholder="Search"
-                  style={styles.searchInput}
-                />
+                <TextInput placeholder="Search" style={styles.searchInput} />
               </View>
               <TouchableOpacity style={styles.filterButton}>
                 <Ionicons name="menu" size={24} color="#fff" />
               </TouchableOpacity>
             </View>
+
+            {loading && <ActivityIndicator size="large" color="#ff4757" />}
           </>
         }
-        ListFooterComponent={<View style={styles.footer} />}
       />
 
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navButton} 
-        onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
           <Ionicons name="home" size={24} color="#666" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navButton}>
@@ -77,9 +93,7 @@ const RecommendationScreen = () => {
         <TouchableOpacity style={styles.navButton}>
           <Ionicons name="heart-outline" size={24} color="#666" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton}
-        onPress={() => navigation.navigate('Profile')}
-        >
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
           <Ionicons name="person-outline" size={24} color="#666" />
         </TouchableOpacity>
       </View>
@@ -90,39 +104,39 @@ const RecommendationScreen = () => {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   flatListContent: {
     paddingTop: 40,
     paddingHorizontal: 15,
-    paddingBottom: 80, // Add padding to ensure content is visible above bottom nav
+    paddingBottom: 80,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 5,
     marginBottom: 20,
   },
   logoText: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
   },
   subText: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
   },
   searchContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 5,
     marginBottom: 20,
   },
   searchBar: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
     borderRadius: 25,
     paddingHorizontal: 15,
     marginRight: 10,
@@ -133,89 +147,54 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   filterButton: {
-    backgroundColor: '#ff4757',
+    backgroundColor: "#ff4757",
     width: 45,
     height: 45,
     borderRadius: 22.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  recommContainer: {
-    paddingHorizontal: 5,
-    marginBottom: 15,
-  },
-  recomm: {
-    fontSize: 26,
-    fontWeight: 'bold',
+    justifyContent: "center",
+    alignItems: "center",
   },
   burgerCard: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 15,
     padding: 10,
     margin: 5,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   burgerImage: {
-    width: '100%',
+    width: "100%",
     height: 120,
     borderRadius: 10,
     marginBottom: 10,
   },
   burgerName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 4,
   },
-  restaurantName: {
+  similarityScore: {
     fontSize: 12,
-    color: '#666',
-    marginBottom: 8,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rating: {
-    marginLeft: 4,
-    fontSize: 14,
-    color: '#666',
-    flex: 1,
-  },
-  heartButton: {
-    padding: 4,
+    color: "#666",
   },
   footer: {
-    height: 20, // Add some space at the bottom of the list
+    height: 20,
   },
   bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    backgroundColor: "#fff",
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: '#f1f1f1',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    borderColor: "#ddd",
   },
   navButton: {
     padding: 10,
-  },
-  centerButton: {
-    backgroundColor: '#ff4757',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: -30,
   },
 });
 
