@@ -9,6 +9,7 @@ import SignInScreen from "./screens/SignInScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import HomeScreen from "./screens/HomeScreen";
 import RecommendationScreen from "./screens/RecommendationScreen";
+import ProfileScreen from "./screens/ProfileScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -59,16 +60,16 @@ function TabNavigator() {
           ),
         }}
       />
-      <Tab.Screen
-        name="Profile"
-        component={HomeScreen}
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
-        }}
-      />
+<Tab.Screen
+  name="Profile"
+  component={ProfileScreen}
+  options={{
+    tabBarLabel: 'Profile',
+    tabBarIcon: ({ color, size }) => (
+      <Ionicons name="person-outline" size={size} color={color} />
+    ),
+  }}
+/>
     </Tab.Navigator>
   );
 }
@@ -86,6 +87,7 @@ export default function App() {
         <Stack.Screen name="SignIn" component={SignInScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="Recommendation" component={RecommendationScreen} /> 
+        <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Home" component={HomeScreen} /> 
       </Stack.Navigator>
     </NavigationContainer>

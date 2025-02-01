@@ -34,8 +34,11 @@ class RecommenderSystem:
         self.scaler = StandardScaler()
         
     def load_data(self, data_path: str):
+        data_path = os.path.abspath("Data")  # Use absolute path
+        print(f"Looking for CSV files in: {data_path}")
         # Load all CSV files from the directory
         csv_files = glob.glob(os.path.join(data_path, "*.csv"))
+        print("Loading CSV files",csv_files)
         dfs = []
         
         for file in csv_files:

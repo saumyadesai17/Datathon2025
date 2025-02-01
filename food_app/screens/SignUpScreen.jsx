@@ -6,6 +6,7 @@ export default function SignUpScreen({ navigation }) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
+  const [location, setLocation] = useState("")
 
   const [confirmPassword, setConfirmPassword] = useState("")
 
@@ -28,6 +29,14 @@ export default function SignUpScreen({ navigation }) {
           value={phoneNumber}
           onChangeText={setPhoneNumber}
           keyboardType="Phone Number"
+          autoCapitalize="none"
+        />
+          <TextInput
+          style={styles.input}
+          placeholder="Location"
+          value={location}
+          onChangeText={setLocation}
+          keyboardType="Location"
           autoCapitalize="none"
         />
         <TextInput

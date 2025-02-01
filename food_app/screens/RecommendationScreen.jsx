@@ -74,17 +74,12 @@ const RecommendationScreen = () => {
         <TouchableOpacity style={styles.navButton}>
           <MaterialIcons name="recommend" size={24} color="#ff4757" />
         </TouchableOpacity>
-
-        {/* <TouchableOpacity style={[styles.navButton, styles.centerButton]}>
-          <Ionicons name="add" size={32} color="#fff" />
-        </TouchableOpacity> */}
-        {/* <TouchableOpacity style={styles.navButton}>
-          <Ionicons name="receipt-outline" size={24} color="#666" />
-        </TouchableOpacity> */}
         <TouchableOpacity style={styles.navButton}>
           <Ionicons name="heart-outline" size={24} color="#666" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton}>
+        <TouchableOpacity style={styles.navButton}
+        onPress={() => navigation.navigate('Profile')}
+        >
           <Ionicons name="person-outline" size={24} color="#666" />
         </TouchableOpacity>
       </View>
