@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
+from collections import Counter
 from geopy.geocoders import Nominatim
 
 class MenuRecommendation(BaseModel):
@@ -296,14 +297,40 @@ async def get_location():
 
     return {"locations": locations}
 
-@app.get("/get_predicted_locations/")
-async def get_predicted_locations():
+
+
+@app.get("/get_missing_locations/")
+async def get_missing_locations():
     data_path = os.path.abspath("Data")
     locations = []
+    
+    # Step 1: Get Outlet Locations
     for file in os.listdir(data_path):
-        if file.endswith(".csv"):  # Ensure it processes only CSV files
-            location_name = os.path.splitext(file)[0]  # Remove '.csv' extension
+        if file.endswith(".csv"):
+            location_name = os.path.splitext(file)[0]  # Extract location name
+            locations.append(location_name)
+    
+    # Step 2: Get User Locations from CSV Data
+    user_locations = []
+    for file in os.listdir(data_path):
+        if file.endswith(".csv"):
+            location_name = os.path.splitext(file)[0]  # Extract location name
+            if location_name == "menu":
+                continue
+            df = pd.read_csv(os.path.join(data_path, file))
+            #print(df)
+            user_locations.extend(df["User_Location"].tolist())  # Add all user locations
+    
+    # Step 3: Find Locations Where No Outlet Exists
+    missing_locations = [loc for loc in user_locations if loc not in locations]
+    
+    # Step 4: Count the Occurrences of Missing Locations
+    missing_location_counts = Counter(missing_locations)
+    
+    # Step 5: Sort the Counts in Descending Order
+    sorted_missing_location_counts = dict(sorted(missing_location_counts.items(), key=lambda item: item[1], reverse=True))
 
+    return {"missing_location_counts": sorted_missing_location_counts}
     
 if __name__ == "__main__":
     import uvicorn
