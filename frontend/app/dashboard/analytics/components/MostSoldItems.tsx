@@ -77,7 +77,7 @@ export default function MostSoldItems() {
             />
             <InfoCard
               title="Revenue"
-              value={`$${mostSoldItems[activeIndex].quantity * 5}`}
+              value={`₹${mostSoldItems[activeIndex].quantity * 5}`}
               borderColor="border-[#00f3ff]/20"
             />
             <GrowthCard value={mostSoldItems[activeIndex].quantity} borderColor="border-[#00ff9d]/20" />

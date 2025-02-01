@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const menuItems = [
-  { path: '/dashboard', label: 'Overview', icon: '📊' },
+  { path: '/dashboard', label: 'Sales Overview', icon: '📊' },
   { path: '/dashboard/analytics', label: 'Analytics', icon: '📈' },
   { path: '/dashboard/forecasting', label: 'Forecasting', icon: '🎯' },
   { path: '/dashboard/upload', label: 'Upload Data', icon: '📤' },

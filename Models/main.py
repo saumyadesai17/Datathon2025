@@ -512,7 +512,7 @@ def most_sold_items():
         "Dadar": dadar_file,
         "Andheri": andheri_file,
         "Borivali": borivali_file,
-        "Bhayander": bhayander_file
+        "Bhayandar": bhayander_file
     }
 
     results = {}

@@ -32,7 +32,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-4xl font-bold gradient-text">Dashboard Overview</h1>
+      <h1 className="text-4xl font-bold gradient-text">Sales Overview</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="glass-card p-6 rounded-xl">
@@ -71,12 +71,25 @@ export default function Dashboard() {
               <div key={index} className="h-24 bg-gray-700 rounded animate-pulse"></div>
             ))
             : (salesData?.map(outlet => (
-              <div key={outlet.filename} className="glass-card p-4 rounded-lg border border-gray-600">
-                <h3 className="text-lg font-medium text-white">{outlet.filename.replace('.csv', '')}</h3>
-                <p className="text-sm text-gray-400">Total Sales: <span className="text-[#007acc] font-bold">₹{outlet.total_sales.toLocaleString()}</span></p>
-                <p className="text-sm text-gray-400">Total Orders: <span className="text-[#00b894] font-bold">{outlet.total_orders.toLocaleString()}</span></p>
-                <p className="text-sm text-gray-400">Avg Order Value: <span className="text-[#e67e22] font-bold">₹{outlet.average_order_value.toLocaleString()}</span></p>
+              <div key={outlet.filename} className="glass-card p-6 rounded-lg border border-gray-600">
+                <h3 className="text-xl font-semibold text-white">{outlet.filename.replace('.csv', '')}</h3>
+                <p className="text-lg text-gray-300 mt-2">
+                  Total Sales: <span className="text-[#007acc] font-bold text-xl">
+                    ₹{new Intl.NumberFormat('en-IN').format(outlet.total_sales)}
+                  </span>
+                </p>
+                <p className="text-lg text-gray-300">
+                  Total Orders: <span className="text-[#00b894] font-bold text-xl">
+                    {new Intl.NumberFormat('en-IN').format(outlet.total_orders)}
+                  </span>
+                </p>
+                <p className="text-lg text-gray-300">
+                  Avg Order Value: <span className="text-[#e67e22] font-bold text-xl">
+                    ₹{new Intl.NumberFormat('en-IN').format(outlet.average_order_value)}
+                  </span>
+                </p>
               </div>
+
             ))
             )}
         </div>
