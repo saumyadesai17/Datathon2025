@@ -22,43 +22,43 @@ const HomeScreen = () => {
       image: require('../assets/images/berger2.png')
     },
     {
-        id: '2',
+        id: '3',
         name: 'Hamburger',
         restaurant: 'Veggie Burger',
         rating: 4.8,
         image: require('../assets/images/berger2.png')
       },    {
-        id: '2',
+        id: '4',
         name: 'Hamburger',
         restaurant: 'Veggie Burger',
         rating: 4.8,
         image: require('../assets/images/berger2.png')
       },    {
-        id: '2',
+        id: '5',
         name: 'Hamburger',
         restaurant: 'Veggie Burger',
         rating: 4.8,
         image: require('../assets/images/berger2.png')
       },    {
-        id: '2',
+        id: '6',
         name: 'Hamburger',
         restaurant: 'Veggie Burger',
         rating: 4.8,
         image: require('../assets/images/berger2.png')
       },    {
-        id: '2',
+        id: '7',
         name: 'Hamburger',
         restaurant: 'Veggie Burger',
         rating: 4.8,
         image: require('../assets/images/berger2.png')
       },    {
-        id: '2',
+        id: '8',
         name: 'Hamburger',
         restaurant: 'Veggie Burger',
         rating: 4.8,
         image: require('../assets/images/berger2.png')
       },    {
-        id: '2',
+        id: '9',
         name: 'Hamburger',
         restaurant: 'Veggie Burger',
         rating: 4.8,
@@ -67,74 +67,88 @@ const HomeScreen = () => {
   ];
 
   const renderBurgerItem = ({ item }) => (
-    <View style={styles.burgerCard}>
+    <TouchableOpacity 
+      style={styles.burgerCard}
+      onPress={() => navigation.navigate('Detail', { burger: item })}
+    >
       <Image source={item.image} style={styles.burgerImage} />
       <Text style={styles.burgerName}>{item.name}</Text>
       <Text style={styles.restaurantName}>{item.restaurant}</Text>
       <View style={styles.ratingContainer}>
         <Ionicons name="star" size={16} color="#FFD700" />
         <Text style={styles.rating}>{item.rating}</Text>
-        <TouchableOpacity style={styles.heartButton}>
+        <TouchableOpacity 
+          style={styles.heartButton}
+          onPress={(e) => {
+            e.stopPropagation(); // Prevent triggering the parent TouchableOpacity
+            // Add heart/favorite functionality here
+          }}
+        >
           <Ionicons name="heart-outline" size={20} color="#666" />
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
     <View style={styles.mainContainer}>
-      <FlatList
-        data={burgers}
-        renderItem={renderBurgerItem}
-        keyExtractor={item => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.flatListContent}
-        ListHeaderComponent={
-          <>
-            <View style={styles.header}>
-              <View>
-                <Text style={styles.logoText}>Foodgo</Text>
-                <Text style={styles.subText}>Order your favourite food!</Text>
-              </View>
+    <FlatList
+      data={burgers}
+      renderItem={renderBurgerItem}
+      keyExtractor={item => item.id}
+      numColumns={2}
+      contentContainerStyle={styles.flatListContent}
+      ListHeaderComponent={
+        <>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.logoText}>Foodgo</Text>
+              <Text style={styles.subText}>Order your favourite food!</Text>
             </View>
+          </View>
 
-            <View style={styles.searchContainer}>
-              <View style={styles.searchBar}>
-                <Ionicons name="search" size={20} color="#666" />
-                <TextInput
-                  placeholder="Search"
-                  style={styles.searchInput}
-                />
-              </View>
-              <TouchableOpacity style={styles.filterButton}>
-                <Ionicons name="menu" size={24} color="#fff" />
-              </TouchableOpacity>
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBar}>
+              <Ionicons name="search" size={20} color="#666" />
+              <TextInput
+                placeholder="Search"
+                style={styles.searchInput}
+              />
             </View>
-          </>
-        }
-        ListFooterComponent={<View style={styles.footer} />}
-      />
+            <TouchableOpacity style={styles.filterButton}>
+              <Ionicons name="menu" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </>
+      }
+      ListFooterComponent={<View style={styles.footer} />}
+    />
 
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navButton}
-        onPress={() => navigation.navigate('Home')}>
-          <Ionicons name="home" size={24} color="#ff4757" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton}          
-         onPress={() => navigation.navigate('Recommendation')}
-        >
-          <MaterialIcons name="recommend" size={24} color="#666" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton}>
-          <Ionicons name="heart-outline" size={24} color="#666" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton} 
-        onPress={() => navigation.navigate('Profile')}>
-          <Ionicons name="person-outline" size={24} color="#666" />
-        </TouchableOpacity>
-      </View>
+    <View style={styles.bottomNav}>
+      <TouchableOpacity 
+        style={styles.navButton}
+        onPress={() => navigation.navigate('Home')}
+      >
+        <Ionicons name="home" size={24} color="#ff4757" />
+      </TouchableOpacity>
+      <TouchableOpacity 
+        style={styles.navButton}          
+        onPress={() => navigation.navigate('Recommendation')}
+      >
+        <MaterialIcons name="recommend" size={24} color="#666" />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navButton}>
+        <Ionicons name="heart-outline" size={24} color="#666" />
+      </TouchableOpacity>
+      <TouchableOpacity 
+        style={styles.navButton} 
+        onPress={() => navigation.navigate('Profile')}
+      >
+        <Ionicons name="person-outline" size={24} color="#666" />
+      </TouchableOpacity>
     </View>
-  );
+  </View>
+);
 };
 
 const styles = StyleSheet.create({
