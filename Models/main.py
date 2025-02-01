@@ -35,7 +35,18 @@ class RecommendationResponse(BaseModel):
     recommended_items: List[MenuRecommendation]
 
 
+class UserProfile(BaseModel):
+    full_name: str
+    Phone_Number: str
+    email: EmailStr
+    location: str
 
+class UpdateProfileRequest(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    location: Optional[str] = None
+    # current_password: Optional[str] = None
+    # new_password: Optional[str] = None
 # Define request model for login
 class LoginRequest(BaseModel):
     Phone_Number: str
@@ -574,7 +585,151 @@ async def sales_respond() -> List[SalesResponse]:
         
     except Exception as e:
         raise HTTPException(status_code=500,detail=str(e))
+@app.get("/profile/{phone_number}", response_model=UserProfile)
 
+async def get_profile(phone_number: str):
+
+    auth_path = os.path.abspath("Auth")
+
+    csv_file = os.path.join(auth_path, "user_signup.csv")
+
+    try:
+
+        with open(csv_file, 'r', encoding='utf-8') as f:
+
+            reader = csv.DictReader(f)
+
+            for row in reader:
+
+                if row['Phone_Number'] == phone_number:
+
+                    return {
+
+                        "full_name": row['full_name'],
+
+                        "Phone_Number": row['Phone_Number'],
+
+                        "email": row['email'],
+
+                        "location": row['location']
+
+                    }
+
+        raise HTTPException(
+
+            status_code=404,
+
+            detail="User not found"
+
+        )
+
+    except Exception as e:
+
+        raise HTTPException(
+
+            status_code=500,
+
+            detail=f"Error reading user data: {str(e)}"
+
+        )
+ 
+@app.put("/profile/{phone_number}", response_model=UserProfile)
+
+async def update_profile(phone_number: str, profile_update: UpdateProfileRequest):
+
+    auth_path = os.path.abspath("Auth")
+
+    csv_file = os.path.join(auth_path, "user_signup.csv")
+
+    temp_file = os.path.join(auth_path, "temp_user_signup.csv")
+
+    try:
+ 
+ 
+        user_found = False
+
+        rows = []
+
+        # Read existing data
+
+        with open(csv_file, 'r', encoding='utf-8') as f:
+
+            reader = csv.DictReader(f)
+
+            headers = reader.fieldnames
+
+            for row in reader:
+
+                if row['Phone_Number'] == phone_number:
+
+                    user_found = True
+
+                    if profile_update.full_name:
+
+                        row['full_name'] = profile_update.full_name
+
+                    if profile_update.email:
+
+                        row['email'] = profile_update.email
+
+                    if profile_update.location:
+
+                        row['location'] = profile_update.location
+
+                rows.append(row)
+ 
+        if not user_found:
+
+            raise HTTPException(
+
+                status_code=404,
+
+                detail="User not found"
+
+            )
+ 
+        # Write updated data
+
+        with open(temp_file, 'w', newline='', encoding='utf-8') as f:
+
+            writer = csv.DictWriter(f, fieldnames=headers)
+
+            writer.writeheader()
+
+            writer.writerows(rows)
+ 
+        # Replace original file with  file
+
+        os.replace(temp_file, csv_file)
+ 
+        # Return updated profile
+
+        return {
+
+            "full_name": next(row['full_name'] for row in rows if row['Phone_Number'] == phone_number),
+
+            "Phone_Number": phone_number,
+
+            "email": next(row['email'] for row in rows if row['Phone_Number'] == phone_number),
+
+            "location": next(row['location'] for row in rows if row['Phone_Number'] == phone_number)
+
+        }
+ 
+    except HTTPException:
+
+        raise
+
+    except Exception as e:
+
+        raise HTTPException(
+
+            status_code=500,
+
+            detail=f"Error updating profile: {str(e)}"
+
+        )
+ 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
