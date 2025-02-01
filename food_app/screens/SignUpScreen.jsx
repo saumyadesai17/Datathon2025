@@ -1,20 +1,84 @@
-import { useState } from "react"
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native"
+import { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import axios from "axios";
 
 export default function SignUpScreen({ navigation }) {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [phoneNumber, setPhoneNumber] = useState("")
-  const [location, setLocation] = useState("")
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [location, setLocation] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const [confirmPassword, setConfirmPassword] = useState("")
+  const validateForm = () => {
+    if (!name || !email || !password || !phoneNumber || !location || !confirmPassword) {
+      Alert.alert("Error", "Please fill in all fields");
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Error", "Please enter a valid email address");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSignUp = async () => {
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.post('http://192.168.135.50:8000/signup/', {
+        full_name: name,
+        Phone_Number: phoneNumber,
+        email: email.toLowerCase(),
+        location: location,
+        password: password,
+        confirm_password: confirmPassword
+      });
+
+      Alert.alert(
+        "Success",
+        "Account created successfully!",
+        [
+          {
+            text: "OK",
+            onPress: () => navigation.navigate("SignIn")
+          }
+        ]
+      );
+    } catch (error) {
+      let errorMessage = "An error occurred while creating your account";
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        errorMessage = error.response.data?.message || errorMessage;
+      }
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create Account</Text>
       <View style={styles.form}>
-        <TextInput style={styles.input} placeholder="Full Name" value={name} onChangeText={setName} />
+        <TextInput
+          style={styles.input}
+          placeholder="Full Name"
+          value={name}
+          onChangeText={setName}
+          editable={!loading}
+        />
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -22,22 +86,22 @@ export default function SignUpScreen({ navigation }) {
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          editable={!loading}
         />
         <TextInput
           style={styles.input}
           placeholder="Phone Number"
           value={phoneNumber}
           onChangeText={setPhoneNumber}
-          keyboardType="Phone Number"
-          autoCapitalize="none"
+          keyboardType="phone-pad"
+          editable={!loading}
         />
-          <TextInput
+        <TextInput
           style={styles.input}
           placeholder="Location"
           value={location}
           onChangeText={setLocation}
-          keyboardType="Location"
-          autoCapitalize="none"
+          editable={!loading}
         />
         <TextInput
           style={styles.input}
@@ -45,6 +109,7 @@ export default function SignUpScreen({ navigation }) {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          editable={!loading}
         />
         <TextInput
           style={styles.input}
@@ -52,16 +117,27 @@ export default function SignUpScreen({ navigation }) {
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
+          editable={!loading}
         />
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Sign Up</Text>
+        <TouchableOpacity 
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleSignUp}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? "Creating Account..." : "Sign Up"}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("SignIn")} style={styles.linkButton}>
+        <TouchableOpacity 
+          onPress={() => navigation.navigate("SignIn")} 
+          style={styles.linkButton}
+          disabled={loading}
+        >
           <Text style={styles.linkText}>Already have an account? Sign In</Text>
         </TouchableOpacity>
       </View>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -94,6 +170,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
   },
+  buttonDisabled: {
+    backgroundColor: "#cccccc",
+  },
   buttonText: {
     color: "#ffffff",
     fontSize: 16,
@@ -107,5 +186,4 @@ const styles = StyleSheet.create({
     color: "#ff4757",
     fontSize: 14,
   },
-})
-
+});

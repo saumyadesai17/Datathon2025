@@ -1,118 +1,133 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { useState, useEffect } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput } from "react-native"
+import { Ionicons, MaterialIcons } from "@expo/vector-icons"
+import { useNavigation } from "@react-navigation/native"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import axios from "axios"
 
 const ProfileScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation()
+  const [userData, setUserData] = useState({
+    full_name: "",
+    email: "",
+    location: "",
+    Phone_Number: "",
+  })
+  const [isEditing, setIsEditing] = useState(false)
+
+  useEffect(() => {
+    fetchUserProfile()
+  }, [])
+
+  const fetchUserProfile = async () => {
+    try {
+      const phoneNumber = await AsyncStorage.getItem("phone_number")
+      if (phoneNumber) {
+        const response = await axios.get(`http://192.168.135.50:8000/profile/${phoneNumber}`)
+        setUserData(response.data)
+        console.log("in the profile", response.data)
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error)
+      Alert.alert("Error", "Failed to load user profile")
+    }
+  }
+
+  const handleEditProfile = () => {
+    setIsEditing(true)
+  }
+
+  const handleSaveProfile = async () => {
+    try {
+      const response = await axios.put(`http://192.168.135.50:8000/profile/${userData.Phone_Number}`, userData)
+      setUserData(response.data)
+      setIsEditing(false)
+      Alert.alert("Success", "Profile updated successfully")
+    } catch (error) {
+      console.error("Error updating profile:", error)
+      Alert.alert("Error", "Failed to update profile")
+    }
+  }
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("access_token");
+      await AsyncStorage.removeItem("phone_number");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "SignIn" }],
+      })
+    } catch (error) {
+      console.error("Error logging out:", error);
+      Alert.alert("Error", "Failed to log out");
+    }
+  };
+
+  const renderField = (label, key) => (
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {isEditing && key !== "Phone_Number" ? (
+        <TextInput
+          style={styles.input}
+          value={userData[key]}
+          onChangeText={(text) => setUserData({ ...userData, [key]: text })}
+        />
+      ) : (
+        <Text style={styles.fieldValue}>{userData[key]}</Text>
+      )}
+    </View>
+  )
 
   return (
     <View style={styles.container}>
-      {/* Header with back button and settings */}
+      {/* Header with back button */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        {/* <TouchableOpacity style={styles.settingsButton}>
-          <Ionicons name="settings-outline" size={24} color="#fff" />
-        </TouchableOpacity> */}
       </View>
 
       {/* Profile Section with curved bottom */}
-      <View style={styles.profileSection}>
-        {/* Profile Image */}
-        {/* <View style={styles.profileImageContainer}>
-          <Image
-            source={require('../assets/images/profile-pic.jpg')}
-            style={styles.profileImage}
-          /> 
-        </View> */}
-      </View>
+      <View style={styles.profileSection}>{/* Add profile image here if needed */}</View>
 
       {/* Profile Details */}
       <ScrollView style={styles.detailsSection}>
-        {/* Profile Fields */}
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Name</Text>
-          <Text style={styles.fieldValue}>Sophia Patel</Text>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Email</Text>
-          <Text style={styles.fieldValue}>sophiapatel@gmail.com</Text>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Location</Text>
-          <Text style={styles.fieldValue}>Vasai</Text>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Phone Number</Text>
-          <Text style={styles.fieldValue}>9322764396</Text>
-        </View>
-
-        {/* <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Password</Text>
-          <View style={styles.passwordDots}>
-            {[...Array(8)].map((_, i) => (
-              <View key={i} style={styles.passwordDot} />
-            ))}
-          </View>
-        </View> */}
-
-        {/* Action Buttons */}
-        {/* <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Payment Details</Text>
-          <Ionicons name="chevron-forward" size={24} color="#666" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Order history</Text>
-          <Ionicons name="chevron-forward" size={24} color="#666" />
-        </TouchableOpacity> */}
+        {renderField("Name", "full_name")}
+        {renderField("Email", "email")}
+        {renderField("Location", "location")}
+        {renderField("Phone Number", "Phone_Number")}
 
         {/* Bottom Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.editButton}>
-            <Ionicons name="create-outline" size={20} color="#fff" />
-            <Text style={styles.editButtonText}>Edit Profile</Text>
+          <TouchableOpacity style={styles.editButton} onPress={isEditing ? handleSaveProfile : handleEditProfile}>
+            <Ionicons name={isEditing ? "save-outline" : "create-outline"} size={20} color="#fff" />
+            <Text style={styles.editButtonText}>{isEditing ? "Save Profile" : "Edit Profile"}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.logoutButton}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={20} color="#ff4757" />
             <Text style={styles.logoutButtonText}>Log out</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
-      
+
+      {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navButton} 
-        onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
           <Ionicons name="home" size={24} color="#666" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton} 
-        onPress={() => navigation.navigate('Recommendation')}
-        >
-            
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Recommendation")}>
           <MaterialIcons name="recommend" size={24} color="#666" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navButton}>
           <Ionicons name="heart-outline" size={24} color="#666" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton}
-        onPress={() => navigation.navigate('Profile')}
-        >
-          <Ionicons name="person-outline" size={24} color="#ff4757" />
+        <TouchableOpacity style={styles.navButton}>
+          <Ionicons name="person" size={24} color="#ff4757" />
         </TouchableOpacity>
       </View>
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {

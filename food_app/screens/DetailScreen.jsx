@@ -75,7 +75,7 @@ export default function DetailScreen({ route, navigation }) {
         </View>
 
         {/* Bottom Bar */}
-        <View style={styles.bottomBar}>
+        {/* <View style={styles.bottomBar}>
           <View style={styles.priceContainer}>
             <Text style={styles.priceLabel}>Price</Text>
             <Text style={styles.price}>${(8.24 * quantity).toFixed(2)}</Text>
@@ -83,7 +83,7 @@ export default function DetailScreen({ route, navigation }) {
           <TouchableOpacity style={styles.orderButton}>
             <Text style={styles.orderButtonText}>ORDER NOW</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </View>
     </ScrollView>
   )

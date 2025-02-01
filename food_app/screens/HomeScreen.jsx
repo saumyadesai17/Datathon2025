@@ -144,7 +144,7 @@ const HomeScreen = () => {
         style={styles.navButton} 
         onPress={() => navigation.navigate('Profile')}
       >
-        <Ionicons name="person-outline" size={24} color="#666" />
+        <Ionicons name="person" size={24} color="#666" />
       </TouchableOpacity>
     </View>
   </View>

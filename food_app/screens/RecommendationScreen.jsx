@@ -8,31 +8,50 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const RecommendationScreen = () => {
   const navigation = useNavigation();
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const userId = 1186; // Pass the required user_id
+  const [phoneNumber, setPhoneNumber] = useState(null);
 
   useEffect(() => {
-    fetchRecommendations();
+    getPhoneNumber();
   }, []);
 
-  const fetchRecommendations = async () => {
+  const getPhoneNumber = async () => {
+    try {
+      const storedPhoneNumber = await AsyncStorage.getItem('phone_number');
+      if (storedPhoneNumber) {
+        setPhoneNumber(storedPhoneNumber);
+        fetchRecommendations(storedPhoneNumber);
+      } else {
+        Alert.alert('Error', 'Please login first');
+        navigation.navigate('SignIn');
+      }
+    } catch (error) {
+      console.error('Error retrieving phone number:', error);
+      setLoading(false);
+    }
+  };
+
+  const fetchRecommendations = async (phone) => {
     try {
       const response = await axios.post("http://192.168.135.50:8000/recommend/", {
-        user_id: userId,
-        num_recommendations: 5,
+        Phone_Number: phone, // Using phone number instead of user_id
+        num_recommendations: 2,
       });
 
       setRecommendations(response.data.recommended_items);
     } catch (error) {
       console.error("Error fetching recommendations:", error);
+      Alert.alert('Error', 'Failed to fetch recommendations');
     } finally {
       setLoading(false);
     }
@@ -45,9 +64,6 @@ const RecommendationScreen = () => {
         style={styles.burgerImage}
       />
       <Text style={styles.burgerName}>{item.menu_name}</Text>
-      <Text style={styles.similarityScore}>
-        Similarity Score: {item.similarity_score.toFixed(2)}
-      </Text>
     </View>
   );
 
@@ -94,7 +110,7 @@ const RecommendationScreen = () => {
           <Ionicons name="heart-outline" size={24} color="#666" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
-          <Ionicons name="person-outline" size={24} color="#666" />
+          <Ionicons name="person" size={24} color="#666" />
         </TouchableOpacity>
       </View>
     </View>
@@ -176,10 +192,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 4,
-  },
-  similarityScore: {
-    fontSize: 12,
-    color: "#666",
   },
   footer: {
     height: 20,
