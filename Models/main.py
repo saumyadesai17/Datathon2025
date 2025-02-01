@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
+from geopy.geocoders import Nominatim
 
 class MenuRecommendation(BaseModel):
     menu_id: int
@@ -272,8 +273,38 @@ def get_forecast(location: str = None):
     forecasts = {loc: generate_forecast(*files) for loc, files in models.items()}
     return {"forecast":forecasts}
 
+def get_lat_lon(place):
+    geolocator = Nominatim(user_agent="geo_finder", timeout=10)
+    location = geolocator.geocode(place)
+    if location:
+        return {"latitude": location.latitude, "longitude": location.longitude}
+    else:
+        return {"error": "Location not found"}
 
+@app.get("/get_location/")
+async def get_location():
+    data_path = os.path.abspath("Data")
+    locations = []
 
+    for file in os.listdir(data_path):
+        if file.endswith(".csv"):  # Ensure it processes only CSV files
+            location_name = os.path.splitext(file)[0]  # Remove '.csv' extension
+            if location_name == "menu":  # Skip "menu.csv"
+                continue
+            lat_lon = get_lat_lon(location_name)  # Get lat & lon
+            locations.append({"name": location_name, **lat_lon})  # Store name & lat-lon
+
+    return {"locations": locations}
+
+@app.get("/get_predicted_locations/")
+async def get_predicted_locations():
+    data_path = os.path.abspath("Data")
+    locations = []
+    for file in os.listdir(data_path):
+        if file.endswith(".csv"):  # Ensure it processes only CSV files
+            location_name = os.path.splitext(file)[0]  # Remove '.csv' extension
+
+    
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
