@@ -42,7 +42,7 @@ export default function SalesGraph() {
           <select
             value={timeFrame}
             onChange={(e) => setTimeFrame(e.target.value as TimeFrame)}
-            className="glass-select px-4 py-2 rounded-lg border border-gray-700 focus:border-[#00f3ff] bg-transparent text-white"
+            className="glass-card px-4 py-2 rounded-lg border border-gray-700 focus:border-[#00f3ff] bg-gray-800 text-white focus:bg-gray-900"
             disabled={showCategories}
           >
             <option value="daily">Daily</option>
@@ -53,7 +53,7 @@ export default function SalesGraph() {
           <select
             value={chartType}
             onChange={(e) => setChartType(e.target.value as ChartType)}
-            className="glass-select px-4 py-2 rounded-lg border border-gray-700 focus:border-[#00f3ff] bg-transparent text-white"
+            className="glass-card px-4 py-2 rounded-lg border border-gray-700 focus:border-[#00f3ff] bg-gray-800 text-white focus:bg-gray-900"
           >
             <option value="line">Line</option>
             <option value="bar">Bar</option>
