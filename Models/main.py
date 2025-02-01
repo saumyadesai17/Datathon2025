@@ -8,6 +8,7 @@ import glob
 import os
 from datetime import datetime
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 # Define a new model for the menu recommendation details
 class MenuRecommendation(BaseModel):
@@ -25,7 +26,14 @@ class RecommendationRequest(BaseModel):
     num_recommendations: Optional[int] = 5
 
 app = FastAPI()
-
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (change this for security in production)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
 class RecommenderSystem:
     def __init__(self):
         self.df = None
@@ -139,9 +147,9 @@ async def startup_event():
     recommender.load_data("Core_ml/Models/Data")
     # Train the model
     recommender.train_model()
-    
+    data_path = os.path.abspath("Data")
     # Load the menu CSV file and create a mapping dictionary (Menu ID -> Menu Name)
-    menu_csv_path = os.path.join("Core_ml/Models/Data", "Menu.csv")
+    menu_csv_path = os.path.join(data_path, "menu.csv")
     try:
         menu_df = pd.read_csv(menu_csv_path)
         # Ensure the Menu ID column is of type int if necessary
