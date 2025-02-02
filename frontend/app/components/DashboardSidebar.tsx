@@ -8,7 +8,7 @@ const menuItems = [
   { path: '/dashboard/analytics', label: 'Analytics', icon: '📈' },
   { path: '/dashboard/forecasting', label: 'Forecasting', icon: '🎯' },
   { path: '/dashboard/expansion', label: 'Insights', icon: '📤' },
-  { path: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
+  // { path: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export default function DashboardSidebar() {

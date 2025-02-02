@@ -30,7 +30,7 @@ export default function RentableShops() {
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="glass-card px-4 py-2 rounded-lg border border-gray-700 focus:border-[#00f3ff] bg-transparent"
+          className="glass-card px-4 py-2 rounded-lg border border-gray-700 focus:border-[#00f3ff] bg-gray-800 text-white focus:bg-gray-900"
         >
           <option value="all">All Prices</option>
           <option value="affordable">Affordable</option>
