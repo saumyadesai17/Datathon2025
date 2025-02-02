@@ -7,7 +7,7 @@ const menuItems = [
   { path: '/dashboard', label: 'Sales Overview', icon: '📊' },
   { path: '/dashboard/analytics', label: 'Analytics', icon: '📈' },
   { path: '/dashboard/forecasting', label: 'Forecasting', icon: '🎯' },
-  { path: '/dashboard/upload', label: 'Upload Data', icon: '📤' },
+  { path: '/dashboard/expansion', label: 'Insights', icon: '📤' },
   { path: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
 ];
 
