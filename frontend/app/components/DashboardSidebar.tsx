@@ -7,7 +7,7 @@ const menuItems = [
   { path: '/dashboard', label: 'Sales Overview', icon: '📊' },
   { path: '/dashboard/analytics', label: 'Analytics', icon: '📈' },
   { path: '/dashboard/forecasting', label: 'Forecasting', icon: '🎯' },
-  { path: '/dashboard/expansion', label: 'Insights', icon: '📤' },
+  { path: 'http://localhost:3001/', label: 'Insights', icon: '📤' },
   // { path: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
 ];
 
@@ -23,20 +23,36 @@ export default function DashboardSidebar() {
       </div>
       
       <nav className="space-y-2">
-        {menuItems.map((item) => (
-          <Link
-            key={item.path}
-            href={item.path}
-            className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-              pathname === item.path
-                ? 'bg-gradient-to-r from-[#00f3ff]/10 to-[#00ff9d]/10 border border-[#00f3ff]/20'
-                : 'hover:bg-white/5'
-            }`}
-          >
-            <span>{item.icon}</span>
-            <span>{item.label}</span>
-          </Link>
-        ))}
+        {menuItems.map((item) => {
+          const isExternal = item.path.startsWith('http');
+          const commonClasses = "flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors";
+          const activeClasses = "bg-gradient-to-r from-[#00f3ff]/10 to-[#00ff9d]/10 border border-[#00f3ff]/20";
+          const inactiveClasses = "hover:bg-white/5";
+          
+          return isExternal ? (
+            <a
+              key={item.path}
+              href={item.path}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${commonClasses} ${inactiveClasses}`}
+            >
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
+            </a>
+          ) : (
+            <Link
+              key={item.path}
+              href={item.path}
+              className={`${commonClasses} ${
+                pathname === item.path ? activeClasses : inactiveClasses
+              }`}
+            >
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
     </aside>
   );

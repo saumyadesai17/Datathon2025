@@ -859,7 +859,7 @@ async def analyze_location(request: CityRequest) -> Dict:
         prompt = f"""The user has a fast food chain and wants to open a new outlet in a new city. 
         The name of the new outlet will be given, and you have to do the following:
         1. Find the competitors of the company in that city.
-        2. Find available shops that the user can rent, along with the rent price.
+        2. Find available shops get_lat_lonthat the user can rent, along with the rent price.
         The city is {request.city}
 
         You have to return the data in JSON format. Please don't duplicate the data i.e name multiple same name.
