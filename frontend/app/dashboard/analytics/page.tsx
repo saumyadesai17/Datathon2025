@@ -1,7 +1,7 @@
 import dynamic from 'next/dynamic';
-import SalesGraph from './components/SalesGraph';
 import MostSoldItems from './components/MostSoldItems';
 import WaitingTimes from './components/WaitingTimes';
+import SalesGraphWithQuery from './components/SalesGraphWithQuery';
 
 // Dynamic import for the map component to avoid SSR issues
 const OutletMap = dynamic(
@@ -15,7 +15,7 @@ export default function Analytics() {
       <h1 className="text-4xl font-bold gradient-text">Analytics & Insights</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <SalesGraph />
+        <SalesGraphWithQuery />
         <MostSoldItems />
         <OutletMap />
         <WaitingTimes />
