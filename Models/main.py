@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.requests import Request  # Correct way to import request in FastAPI
 from fastapi.responses import JSONResponse  # Equivalent to Flas
 from fastapi.encoders import jsonable_encoder
-from typing import List, Optional
+from typing import Dict, List, Optional
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
@@ -12,12 +12,16 @@ import glob
 import csv
 import secrets
 import os
+from google import genai
 from datetime import datetime, timedelta
 from pydantic import BaseModel,EmailStr
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
 from collections import Counter
 from geopy.geocoders import Nominatim
+from dotenv import load_dotenv
+load_dotenv()
+os.environ['GOOGLE_API_KEY'] = os.getenv('GOOGLE_API_KEY')
 
 class SignupRequest(BaseModel):
     full_name: str
@@ -58,6 +62,35 @@ class LoginRequest(BaseModel):
 class OrderRequest(BaseModel):
     burger_name: str
     quantity: int
+# Pydantic models for response structure
+class Competitor(BaseModel):
+    name: str
+    location: str
+
+class RentableShop(BaseModel):
+    name: str
+    location: str
+    rent_price: str
+
+class ShopAnalysisResponse(BaseModel):
+    Competitors: List[Competitor]
+    Rentable_Shops: List[RentableShop]
+    
+    class Config:
+        allow_population_by_field_name = True
+        json_schema_extra = {
+            "example": {
+                "Competitors": [
+                    {"name": "competitor_1", "location": "location_1"}
+                ],
+                "Rentable_Shops": [
+                    {"name": "shop_1", "location": "location_1", "rent_price": "35000"}
+                ]
+            }
+        }
+
+class CityRequest(BaseModel):
+    city: str
 
 app = FastAPI()
 
@@ -812,7 +845,89 @@ def get_orders(phone_number: str):
         raise HTTPException(status_code=404, detail="No orders found for this phone number.")
  
     return {"orders": user_orders}
- 
+import json
+def show_json(obj):
+  print(json.dumps(obj.model_dump(exclude_none=True), indent=2)) 
+# Initialize Google AI client
+client = genai.Client(http_options={'api_version': 'v1alpha'})
+MODEL = 'gemini-2.0-flash-exp'
+@app.post("/analyze-location", response_model=ShopAnalysisResponse)
+async def analyze_location(request: CityRequest) -> Dict:
+    try:
+        import json
+        # Create prompt
+        prompt = f"""The user has a fast food chain and wants to open a new outlet in a new city. 
+        The name of the new outlet will be given, and you have to do the following:
+        1. Find the competitors of the company in that city.
+        2. Find available shops that the user can rent, along with the rent price.
+        The city is {request.city}
+
+        You have to return the data in JSON format. Please don't duplicate the data i.e name multiple same name.
+        Strictly follow this JSON format:
+
+        {{
+            "Competitors": [
+                {{"name": "competitor_1", "location": "competitor_1_location"}},
+                {{"name": "competitor_2", "location": "competitor_2_location"}}
+            ],
+            "Rentable_Shops": [
+                {{"name": "shop_1", "location": "shop_1_location(give exact location of area)", "rent_price": "35000"}},
+                {{"name": "shop_2", "location": "shop_2_location(give exact location of area)", "rent_price": "40000"}}
+            ]
+        }}
+
+        Note: Use underscore in 'Rentable_Shops' key name and use 'rent_price' instead of 'rent price'.
+        """
+
+        # Configure search tool
+        search_tool = {'google_search': {}}
+        
+        # Create chat instance
+        chat = client.chats.create(model=MODEL, config={'tools': [search_tool]})
+        
+        # Send message and get response
+        response = chat.send_message(prompt)
+        
+        # Extract text from response and clean it up
+        result_text = ""
+        for part in response.candidates[0].content.parts:
+            if hasattr(part, 'text'):
+                result_text += part.text.strip()
+            else:
+                show_json(part)    
+        
+        # Debug the response
+        print("Raw response text:", result_text)
+        
+        try:
+            # Look for JSON content between curly braces
+            start_idx = result_text.find('{')
+            end_idx = result_text.rfind('}') + 1
+            if start_idx != -1 and end_idx != -1:
+                json_str = result_text[start_idx:end_idx]
+                result_json = json.loads(json_str)
+                
+                # Transform the response to match our model
+                if "Rentable Shops" in result_json:
+                    # Rename the key
+                    result_json["Rentable_Shops"] = result_json.pop("Rentable Shops")
+                    
+                # Transform rent price key if needed
+                for shop in result_json.get("Rentable_Shops", []):
+                    if "rent price" in shop:
+                        shop["rent_price"] = shop.pop("rent price")
+                
+                return result_json
+            else:
+                raise ValueError("No JSON content found in response")
+            
+        except json.JSONDecodeError as e:
+            print(f"JSON parsing error: {str(e)}")
+            raise HTTPException(status_code=500, detail="Invalid JSON response from AI service")
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
