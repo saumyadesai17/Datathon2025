@@ -2,6 +2,7 @@ import ast
 from fastapi import FastAPI, HTTPException
 from fastapi.requests import Request  # Correct way to import request in FastAPI
 from fastapi.responses import JSONResponse  # Equivalent to Flas
+from fastapi.encoders import jsonable_encoder
 from typing import List, Optional
 import pandas as pd
 import numpy as np
@@ -17,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import joblib
 from collections import Counter
 from geopy.geocoders import Nominatim
+
 class SignupRequest(BaseModel):
     full_name: str
     Phone_Number: str
@@ -24,6 +26,7 @@ class SignupRequest(BaseModel):
     location: str
     password: str
     confirm_password: str
+
 class MenuRecommendation(BaseModel):
     menu_id: int
     menu_name: str
@@ -50,7 +53,11 @@ class UpdateProfileRequest(BaseModel):
 # Define request model for login
 class LoginRequest(BaseModel):
     Phone_Number: str
-    password: str    
+    password: str
+
+class OrderRequest(BaseModel):
+    burger_name: str
+    quantity: int
 
 app = FastAPI()
 
@@ -585,50 +592,35 @@ async def sales_respond() -> List[SalesResponse]:
         
     except Exception as e:
         raise HTTPException(status_code=500,detail=str(e))
+
 @app.get("/profile/{phone_number}", response_model=UserProfile)
 
 async def get_profile(phone_number: str):
-
     auth_path = os.path.abspath("Auth")
-
     csv_file = os.path.join(auth_path, "user_signup.csv")
 
     try:
-
         with open(csv_file, 'r', encoding='utf-8') as f:
-
             reader = csv.DictReader(f)
 
             for row in reader:
-
                 if row['Phone_Number'] == phone_number:
-
                     return {
-
                         "full_name": row['full_name'],
-
                         "Phone_Number": row['Phone_Number'],
-
                         "email": row['email'],
-
                         "location": row['location']
 
                     }
 
         raise HTTPException(
-
             status_code=404,
-
             detail="User not found"
-
         )
 
     except Exception as e:
-
         raise HTTPException(
-
             status_code=500,
-
             detail=f"Error reading user data: {str(e)}"
 
         )
@@ -636,99 +628,190 @@ async def get_profile(phone_number: str):
 @app.put("/profile/{phone_number}", response_model=UserProfile)
 
 async def update_profile(phone_number: str, profile_update: UpdateProfileRequest):
-
     auth_path = os.path.abspath("Auth")
-
     csv_file = os.path.join(auth_path, "user_signup.csv")
-
     temp_file = os.path.join(auth_path, "temp_user_signup.csv")
 
     try:
- 
- 
         user_found = False
-
         rows = []
-
         # Read existing data
 
         with open(csv_file, 'r', encoding='utf-8') as f:
-
             reader = csv.DictReader(f)
-
             headers = reader.fieldnames
 
             for row in reader:
-
                 if row['Phone_Number'] == phone_number:
-
                     user_found = True
 
                     if profile_update.full_name:
-
                         row['full_name'] = profile_update.full_name
 
                     if profile_update.email:
-
                         row['email'] = profile_update.email
 
                     if profile_update.location:
-
                         row['location'] = profile_update.location
-
                 rows.append(row)
  
         if not user_found:
-
             raise HTTPException(
-
                 status_code=404,
-
                 detail="User not found"
-
             )
  
         # Write updated data
-
         with open(temp_file, 'w', newline='', encoding='utf-8') as f:
-
             writer = csv.DictWriter(f, fieldnames=headers)
-
             writer.writeheader()
-
             writer.writerows(rows)
  
         # Replace original file with  file
-
         os.replace(temp_file, csv_file)
- 
         # Return updated profile
-
         return {
-
             "full_name": next(row['full_name'] for row in rows if row['Phone_Number'] == phone_number),
-
             "Phone_Number": phone_number,
-
             "email": next(row['email'] for row in rows if row['Phone_Number'] == phone_number),
-
             "location": next(row['location'] for row in rows if row['Phone_Number'] == phone_number)
-
         }
  
     except HTTPException:
-
         raise
 
     except Exception as e:
-
         raise HTTPException(
-
             status_code=500,
-
             detail=f"Error updating profile: {str(e)}"
-
         )
+    
+@app.get("/process-data")
+def process_data():
+    # Absolute path to the DATA directory
+    DATA_DIR = os.path.abspath("Data")
+    print(f"Looking for CSV files in: {DATA_DIR}")
+    
+    if not os.path.exists(DATA_DIR):
+        raise HTTPException(status_code=404, detail="DATA directory not found.")
+
+    results = []  # List to hold the processed results
+
+    # Loop over each file in the DATA directory
+    filenames = [os.path.join(DATA_DIR, f) for f in os.listdir(DATA_DIR) if f.lower().endswith('.csv')]
+    print("Loading CSV files", filenames)
+    
+    for file_path in filenames:
+        filename = os.path.basename(file_path)
+        # Skip files whose name starts with "menu"
+        if filename.lower().startswith("menu"):
+            print(f"Skipping file: {filename}")
+            continue
+
+        try:
+            # Read CSV file into a pandas DataFrame
+            df = pd.read_csv(file_path)
+        except Exception as e:
+            print(f"Error reading {filename}: {e}")
+            continue
+
+        try:
+            # Convert Order_Placed_Time to datetime
+            df['Order_Placed_Time'] = pd.to_datetime(df['Order_Placed_Time'])
+        except Exception as e:
+            print(f"Error converting Order_Placed_Time in {filename}: {e}")
+            continue
+
+        # Sort the DataFrame by Order_Placed_Time
+        df_sorted = df.sort_values(by='Order_Placed_Time')
+
+        # Extract date from Order_Placed_Time for daily grouping
+        df_sorted['Order_Date'] = df_sorted['Order_Placed_Time'].dt.date
+
+        # Group by Order_Date and sum the Order_Bill to compute daily sales
+        daily_sales = df_sorted.groupby('Order_Date', as_index=False)['Order_Bill'].sum()
+
+        # Convert the daily sales DataFrame to a list of dictionaries
+        sales_list = daily_sales.to_dict(orient='records')
+
+        results.append({
+            "filename": filename.split('.')[0],
+            "sales": sales_list
+        })
+
+    # Use jsonable_encoder to convert non-serializable types (like date) into serializable ones
+    json_compatible_data = jsonable_encoder({"results": results})
+    return JSONResponse(content=json_compatible_data)
+@app.post("/add_order/{phone_number}")
+async def add_order(phone_number: str, order: OrderRequest):
+    # Ensure the file is stored in the "Auth" directory
+    auth_path = os.path.abspath("Auth")  # Correct directory
+    if not os.path.exists(auth_path):
+        os.makedirs(auth_path)
+ 
+    csv_file = os.path.join(auth_path, "order.csv")  # Use "Auth/order.csv"
+ 
+    # Generate current timestamp in ISO format
+    ordered_time = datetime.utcnow().isoformat()
+ 
+    # Check if file exists, create headers if missing
+    file_exists = os.path.exists(csv_file)
+ 
+    try:
+        with open(csv_file, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+ 
+            # If file is newly created, add headers
+            if not file_exists:
+                headers = ['Phone_Number', 'name', 'quantity', 'ordered_time']
+                writer.writerow(headers)
+ 
+            # Append order data
+            writer.writerow([
+                phone_number,  # Taken from URL path
+                order.burger_name,
+                order.quantity,
+                ordered_time  # Auto-generated timestamp
+            ])
+ 
+            f.flush()  # Force write the data to file immediately
+ 
+            # Debugging: Read back to verify
+            print(f"✅ Order added: {phone_number}, {order.burger_name}, {order.quantity}, {ordered_time}")
+ 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error writing to CSV: {e}")
+ 
+    return {
+        "message": "Order added successfully",
+        "ordered_time": ordered_time
+    }
+   
+ 
+ORDER_FILE = "Auth/order.csv"
+ 
+# Read orders from CSV
+def read_orders():
+    if not os.path.exists(ORDER_FILE):
+        return []
+   
+    orders = []
+    with open(ORDER_FILE, mode="r", newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            orders.append(row)
+    return orders
+ 
+# Get user-specific orders
+@app.get("/get_orders/{phone_number}")
+def get_orders(phone_number: str):
+    orders = read_orders()
+    user_orders = [order for order in orders if order["Phone_Number"] == phone_number]
+ 
+    if not user_orders:
+        raise HTTPException(status_code=404, detail="No orders found for this phone number.")
+ 
+    return {"orders": user_orders}
  
 if __name__ == "__main__":
     import uvicorn
