@@ -928,6 +928,45 @@ async def analyze_location(request: CityRequest) -> Dict:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
 
+
+
+class CityRequest(BaseModel):
+    city: str
+from twilio.rest import Client
+def send_whatsapp(city: str):
+    # Twilio credentials
+    account_sid = "AC794a6d3c32085192652213cd6e12073b"
+    auth_token = "cc943a33bcae8fe6f07cc18721692075"
+    client_twilio = Client(account_sid, auth_token)
+    message_body = f"""
+    🍔🚀 Foodago is Now in {city}! 🚀🍔
+
+    Hey {city}, we heard you loud and clear! So many of you have been traveling to our other outlets just to get a taste of Foodago’s delicious burgers, crispy fries, and signature shakes. Now, you don’t have to go far—because we’re finally here! 🎉
+
+    📍 New Foodago Outlet Now Open in {city}!
+
+    To celebrate, we’re treating you to exclusive first-week offers you won’t want to miss! 🎁🔥
+
+    Come in, grab a bite, and experience the Foodago flavors you love—closer than ever! 🍟🍔
+
+    #FoodagoIn{city} #GrandOpening #TasteTheHype
+    """
+    
+    # Send WhatsApp message
+    message = client_twilio.messages.create(
+        from_='whatsapp:+14155238886',
+        body=message_body,
+        media_url=['https://drive.google.com/uc?id=1UyRsWOl2mz6WZvG0EfND1JIqEzzV52V1'],
+        to='whatsapp:+919322764396'  # Update with the correct recipient number
+    )
+    print(message.sid)
+    return "success"
+
+@app.post("/send-whatsapp/")
+async def send_message(city_request: CityRequest):
+    city = city_request.city
+    result = send_whatsapp(city)
+    return {"message": result,"city":city}
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
