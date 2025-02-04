@@ -11,6 +11,7 @@ import HomeScreen from "./screens/HomeScreen";
 import RecommendationScreen from "./screens/RecommendationScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import DetailScreen from "./screens/DetailScreen";
+import OrderHistoryScreen from "./screens/OrderHistoryScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -90,7 +91,8 @@ export default function App() {
         <Stack.Screen name="Recommendation" component={RecommendationScreen} /> 
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Home" component={HomeScreen} /> 
-        <Stack.Screen name="Detail" component={DetailScreen} />  
+        <Stack.Screen name="Detail" component={DetailScreen} /> 
+        <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -6,65 +6,50 @@ import { useNavigation } from '@react-navigation/native';
 
 const HomeScreen = () => {
     const navigation = useNavigation('')
-  const burgers = [
-    {
-      id: '1',
-      name: 'Cheeseburger',
-      restaurant: "Wendy's Burger",
-      rating: 4.9,
-      image: require('../assets/images/berger.png')
-    },
-    {
-      id: '2',
-      name: 'Hamburger',
-      restaurant: 'Veggie Burger',
-      rating: 4.8,
-      image: require('../assets/images/berger2.png')
-    },
-    {
-        id: '3',
-        name: 'Hamburger',
-        restaurant: 'Veggie Burger',
-        rating: 4.8,
-        image: require('../assets/images/berger2.png')
-      },    {
-        id: '4',
-        name: 'Hamburger',
-        restaurant: 'Veggie Burger',
-        rating: 4.8,
-        image: require('../assets/images/berger2.png')
-      },    {
-        id: '5',
-        name: 'Hamburger',
-        restaurant: 'Veggie Burger',
-        rating: 4.8,
-        image: require('../assets/images/berger2.png')
-      },    {
-        id: '6',
-        name: 'Hamburger',
-        restaurant: 'Veggie Burger',
-        rating: 4.8,
-        image: require('../assets/images/berger2.png')
-      },    {
-        id: '7',
-        name: 'Hamburger',
-        restaurant: 'Veggie Burger',
-        rating: 4.8,
-        image: require('../assets/images/berger2.png')
-      },    {
-        id: '8',
-        name: 'Hamburger',
-        restaurant: 'Veggie Burger',
-        rating: 4.8,
-        image: require('../assets/images/berger2.png')
-      },    {
-        id: '9',
-        name: 'Hamburger',
-        restaurant: 'Veggie Burger',
-        rating: 4.8,
-        image: require('../assets/images/berger2.png')
+    const burgers = [
+      {
+        id: '1',
+        name: 'Cheeseburger',
+        rating: 4.9,
+        image: require('../assets/images/berger.png')
       },
-  ];
+      {
+        id: '2',
+        name: 'French Fries',
+        rating: 4.8,
+        image: require('../assets/images/fries.jpg')
+      },
+      {
+        id: '3',
+        name: 'Chicken Sandwich',
+        rating: 4.7,
+        image: require('../assets/images/chicken_sandwich.jpg')
+      },
+      {
+        id: '4',
+        name: 'Veggie Burger',
+        rating: 4.6,
+        image: require('../assets/images/veggie_burger.jpg')
+      },
+      {
+        id: '5',
+        name: 'BBQ Bacon Burger',
+        rating: 4.9,
+        image: require('../assets/images/bbq_bacon_burger.jpg')
+      },
+      {
+        id: '6',
+        name: 'Crispy Chicken Tenders',
+        rating: 4.7,
+        image: require('../assets/images/chicken_tenders.jpg')
+      },
+      {
+        id: '7',
+        name: 'Spicy Nacho Fries',
+        rating: 4.5,
+        image: require('../assets/images/nacho_fries.jpg')
+      },
+    ];
 
   const renderBurgerItem = ({ item }) => (
     <TouchableOpacity 
@@ -73,11 +58,11 @@ const HomeScreen = () => {
     >
       <Image source={item.image} style={styles.burgerImage} />
       <Text style={styles.burgerName}>{item.name}</Text>
-      <Text style={styles.restaurantName}>{item.restaurant}</Text>
+      {/* <Text style={styles.restaurantName}>{item.restaurant}</Text> */}
       <View style={styles.ratingContainer}>
-        <Ionicons name="star" size={16} color="#FFD700" />
-        <Text style={styles.rating}>{item.rating}</Text>
-        <TouchableOpacity 
+        {/* <Ionicons name="star" size={16} color="#FFD700" /> */}
+        {/* <Text style={styles.rating}>{item.rating}</Text> */}
+        {/* <TouchableOpacity 
           style={styles.heartButton}
           onPress={(e) => {
             e.stopPropagation(); // Prevent triggering the parent TouchableOpacity
@@ -85,7 +70,7 @@ const HomeScreen = () => {
           }}
         >
           <Ionicons name="heart-outline" size={20} color="#666" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </TouchableOpacity>
   );
@@ -137,8 +122,10 @@ const HomeScreen = () => {
       >
         <MaterialIcons name="recommend" size={24} color="#666" />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navButton}>
-        <Ionicons name="heart-outline" size={24} color="#666" />
+      <TouchableOpacity style={styles.navButton}
+      onPress={() => navigation.navigate("OrderHistory")}
+      >
+        <MaterialIcons name="shopping-cart" size={24} color="#666" />
       </TouchableOpacity>
       <TouchableOpacity 
         style={styles.navButton} 
