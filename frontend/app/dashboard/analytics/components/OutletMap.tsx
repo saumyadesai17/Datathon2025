@@ -1,153 +1,178 @@
-'use client';
+"use client"
 
-import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+import { useState, useEffect, useMemo, useCallback } from "react"
+import dynamic from "next/dynamic"
+import { Icon } from "leaflet"
+import "leaflet/dist/leaflet.css"
 
-// Fix for default markers
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+// Dynamically import react-leaflet components
+const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false })
+const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false })
+const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), { ssr: false })
+const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), { ssr: false })
 
-const activeIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
-// Custom icon based on demand category
-const getPredictedIcon = (demandCategory: 'High' | 'Medium' | 'Low') => {
-    return new L.Icon({
-        iconUrl: demandCategory === 'High'
-            ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png'
-            : demandCategory === 'Medium'
-                ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png'
-                : 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-    });
-};
-
+// Define types
 interface OutletLocation {
-    name: string;
-    latitude: number;
-    longitude: number;
+    name: string
+    latitude: number
+    longitude: number
 }
 
 interface PredictedLocation {
-    name: string;
-    count: number;
-    latitude: number;
-    longitude: number;
-    demandCategory: 'High' | 'Medium' | 'Low';
+    name: string
+    count: number
+    latitude: number
+    longitude: number
+    demandCategory: "High" | "Medium" | "Low"
+}
+
+// Create icons outside of the component
+const activeIcon = new Icon({
+    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+})
+
+const predictedIcons = {
+    High: new Icon({
+        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+    }),
+    Medium: new Icon({
+        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
+        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+    }),
+    Low: new Icon({
+        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+    }),
 }
 
 export default function OutletMap() {
-    const [outletLocations, setOutletLocations] = useState<OutletLocation[]>([]);
-    const [predictedLocations, setPredictedLocations] = useState<PredictedLocation[]>([]);
-    const [showPredicted, setShowPredicted] = useState(false);
+    const [outletLocations, setOutletLocations] = useState<OutletLocation[]>([])
+    const [predictedLocations, setPredictedLocations] = useState<PredictedLocation[]>([])
+    const [showPredicted, setShowPredicted] = useState(false)
+
+    const fetchLocations = useCallback(async () => {
+        try {
+            const [outletResponse, predictedResponse] = await Promise.all([
+                fetch("http://localhost:8000/get_location/"),
+                fetch("http://localhost:8000/get_missing_locations/"),
+            ])
+
+            const outletData: { locations: OutletLocation[] } = await outletResponse.json()
+            const predictedData: Record<string, { count: number; latitude: number; longitude: number }> =
+                await predictedResponse.json()
+
+            setOutletLocations(outletData.locations)
+
+            const sortedPredicted = Object.entries(predictedData)
+                .map(([name, data]) => ({
+                    name,
+                    count: data.count,
+                    latitude: data.latitude,
+                    longitude: data.longitude,
+                    demandCategory:
+                        data.count > 700
+                            ? "High"
+                            : data.count > 400
+                                ? "Medium"
+                                : "Low",
+                }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 6)
+
+            setPredictedLocations(sortedPredicted as PredictedLocation[]) // Type assertion to ensure the type is correct
+
+        } catch (error) {
+            console.error("Error fetching locations:", error)
+        }
+    }, [])
 
     useEffect(() => {
-        async function fetchLocations() {
-            try {
-                const outletResponse = await fetch('http://localhost:8000/get_location/');
-                const predictedResponse = await fetch('http://localhost:8000/get_missing_locations/');
+        fetchLocations()
+    }, [fetchLocations])
 
-                const outletData: { locations: OutletLocation[] } = await outletResponse.json();
-                const predictedData: Record<string, { count: number; latitude: number; longitude: number }> = await predictedResponse.json();
+    const togglePredicted = useCallback(() => setShowPredicted((prev) => !prev), [])
 
-                setOutletLocations(outletData.locations);
+    const memoizedOutletMarkers = useMemo(
+        () =>
+            outletLocations.map((outlet: OutletLocation) => (
+                <Marker key={outlet.name} position={[outlet.latitude, outlet.longitude]} icon={activeIcon}>
+                    <Popup>
+                        <div className="p-2">
+                            <h3 className="font-bold">{outlet.name}</h3>
+                            <p className="text-green-400">Existing Outlet</p>
+                        </div>
+                    </Popup>
+                </Marker>
+            )),
+        [outletLocations],
+    )
 
-                const sortedPredicted = Object.entries(predictedData)
-                    .map(([name, data]) => ({
-                        name,
-                        count: data.count,
-                        latitude: data.latitude,
-                        longitude: data.longitude,
-                    }))
-                    .sort((a, b) => b.count - a.count) // Sort by count in descending order
-                    .slice(0, 6); // Get top 6
-
-                // Assign demand categories
-                const categorizedPredicted = sortedPredicted.map(location => {
-                    let demandCategory: 'High' | 'Medium' | 'Low' = 'Low';
-                    if (location.count > 700) {
-                        demandCategory = 'High';
-                    } else if (location.count > 400) {
-                        demandCategory = 'Medium';
-                    }
-                    return { ...location, demandCategory };
-                });
-
-                setPredictedLocations(categorizedPredicted);
-            } catch (error) {
-                console.error('Error fetching locations:', error);
-            }
-        }
-
-        fetchLocations();
-    }, []);
+    const memoizedPredictedMarkers = useMemo(
+        () =>
+            showPredicted &&
+            predictedLocations.map((location: PredictedLocation) => (
+                <Marker
+                    key={location.name}
+                    position={[location.latitude, location.longitude]}
+                    icon={predictedIcons[location.demandCategory]}
+                >
+                    <Popup>
+                        <div className="p-2">
+                            <h3 className="font-bold">{location.name}</h3>
+                            <p>Potential Demand: {location.count}</p>
+                            <p
+                                className={`text-${location.demandCategory === "High" ? "red" : location.demandCategory === "Medium" ? "orange" : "blue"}-400`}
+                            >
+                                {location.demandCategory} Demand
+                            </p>
+                        </div>
+                    </Popup>
+                </Marker>
+            )),
+        [showPredicted, predictedLocations],
+    )
 
     return (
         <div className="glass-card p-6 rounded-xl">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold gradient-text">Outlet Locations</h2>
                 <button
-                    onClick={() => setShowPredicted(!showPredicted)}
+                    onClick={togglePredicted}
                     className={`px-4 py-2 rounded-lg transition-colors ${showPredicted
-                            ? 'bg-gradient-to-r from-[#00f3ff]/20 to-[#00ff9d]/20 border border-[#00f3ff]/40'
-                            : 'glass-card hover:border-[#00f3ff]/40'
+                            ? "bg-gradient-to-r from-[#00f3ff]/20 to-[#00ff9d]/20 border border-[#00f3ff]/40"
+                            : "glass-card hover:border-[#00f3ff]/40"
                         }`}
                 >
-                    {showPredicted ? 'Hide Predictions' : 'Show Predictions'}
+                    {showPredicted ? "Hide Predictions" : "Show Predictions"}
                 </button>
             </div>
 
             <div className="h-[400px] rounded-lg overflow-hidden">
-                <MapContainer
-                    center={[19.076, 72.8777]} // Centered on Mumbai
-                    zoom={12}
-                    style={{ height: '100%', width: '100%' }}
-                >
+                <MapContainer center={[19.076, 72.8777]} zoom={12} style={{ height: "100%", width: "100%" }}>
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     />
-
-                    {outletLocations.map((outlet: OutletLocation) => (
-                        <Marker key={outlet.name} position={[outlet.latitude, outlet.longitude]} icon={activeIcon}>
-                            <Popup>
-                                <div className="p-2">
-                                    <h3 className="font-bold">{outlet.name}</h3>
-                                    <p className="text-green-400">Existing Outlet</p>
-                                </div>
-                            </Popup>
-                        </Marker>
-                    ))}
-
-                    {showPredicted &&
-                        predictedLocations.map((location: PredictedLocation) => (
-                            <Marker
-                                key={location.name}
-                                position={[location.latitude, location.longitude]}
-                                icon={getPredictedIcon(location.demandCategory)} // Use dynamic icon for demand category
-                            >
-                                <Popup>
-                                    <div className="p-2">
-                                        <h3 className="font-bold">{location.name}</h3>
-                                        <p>Potential Demand: {location.count}</p>
-                                        <p className={`text-${location.demandCategory === 'High' ? 'red' : location.demandCategory === 'Medium' ? 'orange' : 'blue'}-400`}>
-                                            {location.demandCategory} Demand
-                                        </p>
-                                    </div>
-                                </Popup>
-                            </Marker>
-                        ))}
+                    {memoizedOutletMarkers}
+                    {memoizedPredictedMarkers}
                 </MapContainer>
             </div>
 
@@ -174,5 +199,5 @@ export default function OutletMap() {
                 )}
             </div>
         </div>
-    );
+    )
 }

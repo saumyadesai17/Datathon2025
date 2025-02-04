@@ -2,7 +2,8 @@ import ast
 from fastapi import FastAPI, HTTPException
 from fastapi.requests import Request  # Correct way to import request in FastAPI
 from fastapi.responses import JSONResponse  # Equivalent to Flas
-from typing import List, Optional
+from fastapi.encoders import jsonable_encoder
+from typing import Dict, List, Optional
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
@@ -11,12 +12,17 @@ import glob
 import csv
 import secrets
 import os
+from google import genai
 from datetime import datetime, timedelta
 from pydantic import BaseModel,EmailStr
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
 from collections import Counter
 from geopy.geocoders import Nominatim
+from dotenv import load_dotenv
+load_dotenv()
+os.environ['GOOGLE_API_KEY'] = os.getenv('GOOGLE_API_KEY')
+
 class SignupRequest(BaseModel):
     full_name: str
     Phone_Number: str
@@ -24,6 +30,7 @@ class SignupRequest(BaseModel):
     location: str
     password: str
     confirm_password: str
+
 class MenuRecommendation(BaseModel):
     menu_id: int
     menu_name: str
@@ -50,7 +57,40 @@ class UpdateProfileRequest(BaseModel):
 # Define request model for login
 class LoginRequest(BaseModel):
     Phone_Number: str
-    password: str    
+    password: str
+
+class OrderRequest(BaseModel):
+    burger_name: str
+    quantity: int
+# Pydantic models for response structure
+class Competitor(BaseModel):
+    name: str
+    location: str
+
+class RentableShop(BaseModel):
+    name: str
+    location: str
+    rent_price: str
+
+class ShopAnalysisResponse(BaseModel):
+    Competitors: List[Competitor]
+    Rentable_Shops: List[RentableShop]
+    
+    class Config:
+        allow_population_by_field_name = True
+        json_schema_extra = {
+            "example": {
+                "Competitors": [
+                    {"name": "competitor_1", "location": "location_1"}
+                ],
+                "Rentable_Shops": [
+                    {"name": "shop_1", "location": "location_1", "rent_price": "35000"}
+                ]
+            }
+        }
+
+class CityRequest(BaseModel):
+    city: str
 
 app = FastAPI()
 
@@ -507,12 +547,12 @@ def most_sold_items():
     dadar_file = os.path.join(DATA_DIR, "Dadar.csv")
     andheri_file = os.path.join(DATA_DIR, "Andheri.csv")
     borivali_file = os.path.join(DATA_DIR, "Borivali.csv")
-    bhayander_file = os.path.join(DATA_DIR, "Bhayander.csv")
+    bhayandar_file = os.path.join(DATA_DIR, "Bhayandar.csv")
     outlets = {
         "Dadar": dadar_file,
         "Andheri": andheri_file,
         "Borivali": borivali_file,
-        "Bhayander": bhayander_file
+        "Bhayandar": bhayandar_file
     }
 
     results = {}
@@ -585,50 +625,35 @@ async def sales_respond() -> List[SalesResponse]:
         
     except Exception as e:
         raise HTTPException(status_code=500,detail=str(e))
+
 @app.get("/profile/{phone_number}", response_model=UserProfile)
 
 async def get_profile(phone_number: str):
-
     auth_path = os.path.abspath("Auth")
-
     csv_file = os.path.join(auth_path, "user_signup.csv")
 
     try:
-
         with open(csv_file, 'r', encoding='utf-8') as f:
-
             reader = csv.DictReader(f)
 
             for row in reader:
-
                 if row['Phone_Number'] == phone_number:
-
                     return {
-
                         "full_name": row['full_name'],
-
                         "Phone_Number": row['Phone_Number'],
-
                         "email": row['email'],
-
                         "location": row['location']
 
                     }
 
         raise HTTPException(
-
             status_code=404,
-
             detail="User not found"
-
         )
 
     except Exception as e:
-
         raise HTTPException(
-
             status_code=500,
-
             detail=f"Error reading user data: {str(e)}"
 
         )
@@ -636,100 +661,312 @@ async def get_profile(phone_number: str):
 @app.put("/profile/{phone_number}", response_model=UserProfile)
 
 async def update_profile(phone_number: str, profile_update: UpdateProfileRequest):
-
     auth_path = os.path.abspath("Auth")
-
     csv_file = os.path.join(auth_path, "user_signup.csv")
-
     temp_file = os.path.join(auth_path, "temp_user_signup.csv")
 
     try:
- 
- 
         user_found = False
-
         rows = []
-
         # Read existing data
 
         with open(csv_file, 'r', encoding='utf-8') as f:
-
             reader = csv.DictReader(f)
-
             headers = reader.fieldnames
 
             for row in reader:
-
                 if row['Phone_Number'] == phone_number:
-
                     user_found = True
 
                     if profile_update.full_name:
-
                         row['full_name'] = profile_update.full_name
 
                     if profile_update.email:
-
                         row['email'] = profile_update.email
 
                     if profile_update.location:
-
                         row['location'] = profile_update.location
-
                 rows.append(row)
  
         if not user_found:
-
             raise HTTPException(
-
                 status_code=404,
-
                 detail="User not found"
-
             )
  
         # Write updated data
-
         with open(temp_file, 'w', newline='', encoding='utf-8') as f:
-
             writer = csv.DictWriter(f, fieldnames=headers)
-
             writer.writeheader()
-
             writer.writerows(rows)
  
         # Replace original file with  file
-
         os.replace(temp_file, csv_file)
- 
         # Return updated profile
-
         return {
-
             "full_name": next(row['full_name'] for row in rows if row['Phone_Number'] == phone_number),
-
             "Phone_Number": phone_number,
-
             "email": next(row['email'] for row in rows if row['Phone_Number'] == phone_number),
-
             "location": next(row['location'] for row in rows if row['Phone_Number'] == phone_number)
-
         }
  
     except HTTPException:
-
         raise
 
     except Exception as e:
-
         raise HTTPException(
-
             status_code=500,
-
             detail=f"Error updating profile: {str(e)}"
-
         )
+    
+@app.get("/process-data")
+def process_data():
+    # Absolute path to the DATA directory
+    DATA_DIR = os.path.abspath("Data")
+    print(f"Looking for CSV files in: {DATA_DIR}")
+    
+    if not os.path.exists(DATA_DIR):
+        raise HTTPException(status_code=404, detail="DATA directory not found.")
+
+    results = []  # List to hold the processed results
+
+    # Loop over each file in the DATA directory
+    filenames = [os.path.join(DATA_DIR, f) for f in os.listdir(DATA_DIR) if f.lower().endswith('.csv')]
+    print("Loading CSV files", filenames)
+    
+    for file_path in filenames:
+        filename = os.path.basename(file_path)
+        # Skip files whose name starts with "menu"
+        if filename.lower().startswith("menu"):
+            print(f"Skipping file: {filename}")
+            continue
+
+        try:
+            # Read CSV file into a pandas DataFrame
+            df = pd.read_csv(file_path)
+        except Exception as e:
+            print(f"Error reading {filename}: {e}")
+            continue
+
+        try:
+            # Convert Order_Placed_Time to datetime
+            df['Order_Placed_Time'] = pd.to_datetime(df['Order_Placed_Time'])
+        except Exception as e:
+            print(f"Error converting Order_Placed_Time in {filename}: {e}")
+            continue
+
+        # Sort the DataFrame by Order_Placed_Time
+        df_sorted = df.sort_values(by='Order_Placed_Time')
+
+        # Extract date from Order_Placed_Time for daily grouping
+        df_sorted['Order_Date'] = df_sorted['Order_Placed_Time'].dt.date
+
+        # Group by Order_Date and sum the Order_Bill to compute daily sales
+        daily_sales = df_sorted.groupby('Order_Date', as_index=False)['Order_Bill'].sum()
+
+        # Convert the daily sales DataFrame to a list of dictionaries
+        sales_list = daily_sales.to_dict(orient='records')
+
+        results.append({
+            "filename": filename.split('.')[0],
+            "sales": sales_list
+        })
+
+    # Use jsonable_encoder to convert non-serializable types (like date) into serializable ones
+    json_compatible_data = jsonable_encoder({"results": results})
+    return JSONResponse(content=json_compatible_data)
+@app.post("/add_order/{phone_number}")
+async def add_order(phone_number: str, order: OrderRequest):
+    # Ensure the file is stored in the "Auth" directory
+    auth_path = os.path.abspath("Auth")  # Correct directory
+    if not os.path.exists(auth_path):
+        os.makedirs(auth_path)
  
+    csv_file = os.path.join(auth_path, "order.csv")  # Use "Auth/order.csv"
+ 
+    # Generate current timestamp in ISO format
+    ordered_time = datetime.utcnow().isoformat()
+ 
+    # Check if file exists, create headers if missing
+    file_exists = os.path.exists(csv_file)
+ 
+    try:
+        with open(csv_file, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+ 
+            # If file is newly created, add headers
+            if not file_exists:
+                headers = ['Phone_Number', 'name', 'quantity', 'ordered_time']
+                writer.writerow(headers)
+ 
+            # Append order data
+            writer.writerow([
+                phone_number,  # Taken from URL path
+                order.burger_name,
+                order.quantity,
+                ordered_time  # Auto-generated timestamp
+            ])
+ 
+            f.flush()  # Force write the data to file immediately
+ 
+            # Debugging: Read back to verify
+            print(f"✅ Order added: {phone_number}, {order.burger_name}, {order.quantity}, {ordered_time}")
+ 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error writing to CSV: {e}")
+ 
+    return {
+        "message": "Order added successfully",
+        "ordered_time": ordered_time
+    }
+   
+ 
+ORDER_FILE = "Auth/order.csv"
+ 
+# Read orders from CSV
+def read_orders():
+    if not os.path.exists(ORDER_FILE):
+        return []
+   
+    orders = []
+    with open(ORDER_FILE, mode="r", newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            orders.append(row)
+    return orders
+ 
+# Get user-specific orders
+@app.get("/get_orders/{phone_number}")
+def get_orders(phone_number: str):
+    orders = read_orders()
+    user_orders = [order for order in orders if order["Phone_Number"] == phone_number]
+ 
+    if not user_orders:
+        raise HTTPException(status_code=404, detail="No orders found for this phone number.")
+ 
+    return {"orders": user_orders}
+import json
+def show_json(obj):
+  print(json.dumps(obj.model_dump(exclude_none=True), indent=2)) 
+# Initialize Google AI client
+client = genai.Client(http_options={'api_version': 'v1alpha'})
+MODEL = 'gemini-2.0-flash-exp'
+@app.post("/analyze-location", response_model=ShopAnalysisResponse)
+async def analyze_location(request: CityRequest) -> Dict:
+    try:
+        import json
+        # Create prompt
+        prompt = f"""The user has a fast food chain and wants to open a new outlet in a new city. 
+        The name of the new outlet will be given, and you have to do the following:
+        1. Find the competitors of the company in that city.
+        2. Find available shops get_lat_lonthat the user can rent, along with the rent price.
+        The city is {request.city}
+
+        You have to return the data in JSON format. Please don't duplicate the data i.e name multiple same name.
+        Strictly follow this JSON format:
+
+        {{
+            "Competitors": [
+                {{"name": "competitor_1", "location": "competitor_1_location"}},
+                {{"name": "competitor_2", "location": "competitor_2_location"}}
+            ],
+            "Rentable_Shops": [
+                {{"name": "shop_1", "location": "shop_1_location(give exact location of area)", "rent_price": "35000"}},
+                {{"name": "shop_2", "location": "shop_2_location(give exact location of area)", "rent_price": "40000"}}
+            ]
+        }}
+
+        Note: Use underscore in 'Rentable_Shops' key name and use 'rent_price' instead of 'rent price'.
+        """
+
+        # Configure search tool
+        search_tool = {'google_search': {}}
+        
+        # Create chat instance
+        chat = client.chats.create(model=MODEL, config={'tools': [search_tool]})
+        
+        # Send message and get response
+        response = chat.send_message(prompt)
+        
+        # Extract text from response and clean it up
+        result_text = ""
+        for part in response.candidates[0].content.parts:
+            if hasattr(part, 'text'):
+                result_text += part.text.strip()
+            else:
+                show_json(part)    
+        
+        # Debug the response
+        print("Raw response text:", result_text)
+        
+        try:
+            # Look for JSON content between curly braces
+            start_idx = result_text.find('{')
+            end_idx = result_text.rfind('}') + 1
+            if start_idx != -1 and end_idx != -1:
+                json_str = result_text[start_idx:end_idx]
+                result_json = json.loads(json_str)
+                
+                # Transform the response to match our model
+                if "Rentable Shops" in result_json:
+                    # Rename the key
+                    result_json["Rentable_Shops"] = result_json.pop("Rentable Shops")
+                    
+                # Transform rent price key if needed
+                for shop in result_json.get("Rentable_Shops", []):
+                    if "rent price" in shop:
+                        shop["rent_price"] = shop.pop("rent price")
+                
+                return result_json
+            else:
+                raise ValueError("No JSON content found in response")
+            
+        except json.JSONDecodeError as e:
+            print(f"JSON parsing error: {str(e)}")
+            raise HTTPException(status_code=500, detail="Invalid JSON response from AI service")
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
+
+
+
+class CityRequest(BaseModel):
+    city: str
+from twilio.rest import Client
+def send_whatsapp(city: str):
+    # Twilio credentials
+    account_sid = "AC794a6d3c32085192652213cd6e12073b"
+    auth_token = "cc943a33bcae8fe6f07cc18721692075"
+    client_twilio = Client(account_sid, auth_token)
+    message_body = f"""
+    🍔🚀 Foodago is Now in {city}! 🚀🍔
+
+    Hey {city}, we heard you loud and clear! So many of you have been traveling to our other outlets just to get a taste of Foodago’s delicious burgers, crispy fries, and signature shakes. Now, you don’t have to go far—because we’re finally here! 🎉
+
+    📍 New Foodago Outlet Now Open in {city}!
+
+    To celebrate, we’re treating you to exclusive first-week offers you won’t want to miss! 🎁🔥
+
+    Come in, grab a bite, and experience the Foodago flavors you love—closer than ever! 🍟🍔
+
+    #FoodagoIn{city} #GrandOpening #TasteTheHype
+    """
+    
+    # Send WhatsApp message
+    message = client_twilio.messages.create(
+        from_='whatsapp:+14155238886',
+        body=message_body,
+        media_url=['https://drive.google.com/uc?id=1UyRsWOl2mz6WZvG0EfND1JIqEzzV52V1'],
+        to='whatsapp:+919322764396'  # Update with the correct recipient number
+    )
+    print(message.sid)
+    return "success"
+
+@app.post("/send-whatsapp/")
+async def send_message(city_request: CityRequest):
+    city = city_request.city
+    result = send_whatsapp(city)
+    return {"message": result,"city":city}
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
