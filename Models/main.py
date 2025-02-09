@@ -595,7 +595,7 @@ async def sales_respond() -> List[SalesResponse]:
     Returns a list of SalesResponse objects containing filename and sales metrics.
     """
     try:
-        DATA_DIR = os.path.abspath("DATA")
+        DATA_DIR = os.path.abspath("Data")
         # Get list of all CSV files in the DATA directory
         csv_files = [f for f in os.listdir(DATA_DIR) if f.endswith('.csv')]
         
