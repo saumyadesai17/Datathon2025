@@ -79,6 +79,8 @@ export default function OutletMap() {
             const predictedData: Record<string, { count: number; latitude: number; longitude: number }> =
                 await predictedResponse.json()
 
+            console.log(outletData, predictedData)
+
             setOutletLocations(outletData.locations)
 
             const sortedPredicted = Object.entries(predictedData)

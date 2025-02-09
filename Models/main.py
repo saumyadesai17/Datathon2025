@@ -1,5 +1,5 @@
 import ast
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.requests import Request  # Correct way to import request in FastAPI
 from fastapi.responses import JSONResponse  # Equivalent to Flas
 from fastapi.encoders import jsonable_encoder
@@ -12,6 +12,8 @@ import glob
 import csv
 import secrets
 import os
+import certifi
+import ssl
 from google import genai
 from datetime import datetime, timedelta
 from pydantic import BaseModel,EmailStr
@@ -19,9 +21,14 @@ from fastapi.middleware.cors import CORSMiddleware
 import joblib
 from collections import Counter
 from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+import json
+import requests
+from collections import Counter
 from dotenv import load_dotenv
 load_dotenv()
 os.environ['GOOGLE_API_KEY'] = os.getenv('GOOGLE_API_KEY')
+os.environ['SSL_CERT_FILE'] = certifi.where()
 
 class SignupRequest(BaseModel):
     full_name: str
@@ -382,11 +389,14 @@ def get_forecast(location: str = None):
 
 def get_lat_lon(place):
     geolocator = Nominatim(user_agent="geo_finder", timeout=10)
-    location = geolocator.geocode(place)
-    if location:
-        return {"latitude": location.latitude, "longitude": location.longitude}
-    else:
-        return {"error": "Location not found"}
+    try:
+        location = geolocator.geocode(place)
+        if location:
+            return {"latitude": location.latitude, "longitude": location.longitude}
+        else:
+            return {"error": "Location not found"}
+    except (GeocoderTimedOut, GeocoderServiceError) as e:
+        return {"error": f"Geocoder error: {str(e)}"}
 
 @app.get("/get_location/")
 async def get_location():
@@ -436,13 +446,23 @@ async def get_missing_locations():
     location_data = {}
     for location, count in missing_location_counts.items():
         coords = get_lat_lon(location)
-        location_data[location] = {
-            "count": count,
-            "latitude": coords["latitude"],
-            "longitude": coords["longitude"]
-        }
-    
+
+        # **Fix: Check if 'latitude' exists in the response**
+        if "latitude" in coords and "longitude" in coords:
+            location_data[location] = {
+                "count": count,
+                "latitude": coords["latitude"],
+                "longitude": coords["longitude"]
+            }
+        else:
+            location_data[location] = {
+                "count": count,
+                "error": coords.get("error", "Location not found")
+            }
+
     return location_data
+
+
 @app.post("/signup")
 async def signup(user: SignupRequest):
     # Validate password confirmation
