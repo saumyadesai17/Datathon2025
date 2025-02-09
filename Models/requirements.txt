@@ -9,4 +9,3 @@ geopy
 google-genai
 twilio
 pydantic[email]
-python-dotenv
