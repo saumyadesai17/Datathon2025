@@ -5,4 +5,8 @@ numpy
 uvicorn
 xgboost
 joblib
-geopy 
+geopy
+google-genai
+twilio
+pydantic[email]
+python-dotenv

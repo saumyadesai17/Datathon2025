@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic';
-import MostSoldItems from './components/MostSoldItems';
+import MostSoldItemsContent from './components/MostSoldItems';
 import WaitingTimes from './components/WaitingTimes';
 import SalesGraphWithQuery from './components/SalesGraphWithQuery';
 
@@ -16,7 +16,7 @@ export default function Analytics() {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <SalesGraphWithQuery />
-        <MostSoldItems />
+        <MostSoldItemsContent />
         <OutletMap />
         <WaitingTimes />
       </div>
