@@ -15,7 +15,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get<OutletSales[]>('http://localhost:8000/get_total_sales/')
+    axios.get<OutletSales[]>('https://datathon2025.onrender.com/get_total_sales/')
       .then(response => {
         setSalesData(response.data);
         setLoading(false);

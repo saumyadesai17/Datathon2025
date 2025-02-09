@@ -6,7 +6,7 @@ import SalesGraph from "./SalesGraph"
 const queryClient = new QueryClient()
 
 const fetchSalesData = async () => {
-  const response = await fetch("http://localhost:8000/process-data")
+  const response = await fetch("https://datathon2025.onrender.com/process-data")
   if (!response.ok) {
     throw new Error("Network response was not ok")
   }

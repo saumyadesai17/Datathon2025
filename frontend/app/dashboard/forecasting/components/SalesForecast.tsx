@@ -27,7 +27,7 @@ export default function SalesForecast() {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const response = await fetch("http://localhost:8000/forecast")
+        const response = await fetch("https://datathon2025.onrender.com/forecast")
         const data = await response.json()
 
         const outletData = data.forecast[selectedOutlet]

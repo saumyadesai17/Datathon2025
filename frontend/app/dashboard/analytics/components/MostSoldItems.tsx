@@ -18,7 +18,7 @@ interface BackendResponse {
 }
 
 const fetchMostSoldItems = async (): Promise<MostSoldItem[]> => {
-  const response = await fetch("http://localhost:8000/most_sold_items")
+  const response = await fetch("https://datathon2025.onrender.com/most_sold_items")
   const data: BackendResponse = await response.json()
 
   return Object.keys(data).map((outlet) => ({

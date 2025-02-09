@@ -29,7 +29,7 @@ export default function LocationAnalysis() {
   const fetchTopLocations = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:8000/get_missing_locations");
+      const res = await fetch("https://datathon2025.onrender.com/get_missing_locations");
       if (!res.ok) throw new Error("Failed to fetch locations");
       const data = await res.json();
 
@@ -57,7 +57,7 @@ export default function LocationAnalysis() {
 
     for (const city of cities) {
       try {
-        const res = await fetch("http://localhost:8000/analyze-location", {
+        const res = await fetch("https://datathon2025.onrender.com/analyze-location", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ city }),
@@ -98,7 +98,7 @@ export default function LocationAnalysis() {
 
   const sendWhatsApp = async (city: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/send_whatsapp?city=${city}`, {
+      const res = await fetch(`https://datathon2025.onrender.com/send_whatsapp?city=${city}`, {
         method: "POST",
       });
 

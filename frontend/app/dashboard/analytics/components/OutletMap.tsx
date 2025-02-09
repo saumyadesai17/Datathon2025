@@ -71,8 +71,8 @@ export default function OutletMap() {
     const fetchLocations = useCallback(async () => {
         try {
             const [outletResponse, predictedResponse] = await Promise.all([
-                fetch("http://localhost:8000/get_location/"),
-                fetch("http://localhost:8000/get_missing_locations/"),
+                fetch("https://datathon2025.onrender.com/get_location/"),
+                fetch("https://datathon2025.onrender.com/get_missing_locations/"),
             ])
 
             const outletData: { locations: OutletLocation[] } = await outletResponse.json()
