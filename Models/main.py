@@ -537,7 +537,7 @@ async def login(user: LoginRequest):
 
 # Function to get the most sold item for a given outlet CSV file
 def get_most_sold_item(file_path):
-    DATA_DIR = os.path.abspath("DATA")
+    DATA_DIR = os.path.abspath("Data")
     menu_file = os.path.join(DATA_DIR, "menu.csv")
     menu_df = pd.read_csv(menu_file)  # CSV should have 'Menu ID' and 'Menu Name' columns
     menu_mapping = dict(zip(menu_df["Menu ID"], menu_df["Menu Name"]))
