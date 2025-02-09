@@ -1,13 +1,60 @@
-
-import { useState } from "react"
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import Slider from "@react-native-community/slider"
+import { useState, useEffect } from "react";
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function DetailScreen({ route, navigation }) {
-  const [quantity, setQuantity] = useState(1)
-  const [spiciness, setSpiciness] = useState(2)
-  const { burger } = route.params
+  const [quantity, setQuantity] = useState(1);
+  const [phoneNumber, setPhoneNumber] = useState(null);
+  const { burger } = route.params;
+
+  // Fetch phone number from AsyncStorage
+  useEffect(() => {
+    const getPhoneNumber = async () => {
+      try {
+        const storedPhoneNumber = await AsyncStorage.getItem("phone_number");
+        if (storedPhoneNumber) {
+          setPhoneNumber(storedPhoneNumber);
+        }
+      } catch (error) {
+        console.error("Error retrieving phone number:", error);
+      }
+    };
+
+    getPhoneNumber();
+  }, []);
+
+  // Function to Place Order
+  const placeOrder = async () => {
+    if (!phoneNumber) {
+      Alert.alert("Error", "Phone number not found. Please login again.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://192.168.135.50:8000/add_order/${phoneNumber}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          burger_name: burger.name,
+          quantity: quantity,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert("Success", "Order placed successfully!");
+      } else {
+        Alert.alert("Error", data.detail || "Failed to place order.");
+      }
+    } catch (error) {
+      console.error("Error placing order:", error);
+      Alert.alert("Error", "Something went wrong. Please try again.");
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -28,41 +75,16 @@ export default function DetailScreen({ route, navigation }) {
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>{burger.name}</Text>
-          <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Text style={styles.rating}>{burger.rating}</Text>
-            <Text style={styles.time}>• 25 mins</Text>
-          </View>
         </View>
 
         <Text style={styles.description}>
           The {burger.name} is a classic fast food burger that makes a punch of flavor in every bite. Made with a juicy
-          beef patty cooked to perfection, it's topped with melted American cheese, crispy lettuce, ripe tomato, and
-          crunchy pickles.
+          beef patty cooked to perfection, it's topped with melted American cheese, crispy lettuce, ripe tomato, and crunchy pickles.
         </Text>
-
-        {/* Spiciness Slider */}
-        <View style={styles.sliderContainer}>
-          <Text style={styles.sliderLabel}>Spicy</Text>
-          <View style={styles.sliderRow}>
-            <Text>Mild</Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={0}
-              maximumValue={4}
-              value={spiciness}
-              onValueChange={setSpiciness}
-              minimumTrackTintColor="#ff4757"
-              maximumTrackTintColor="#ddd"
-              thumbTintColor="#ff4757"
-            />
-            <Text>Hot</Text>
-          </View>
-        </View>
 
         {/* Portion Selector */}
         <View style={styles.portionContainer}>
-          <Text style={styles.portionLabel}>Portion</Text>
+          <Text style={styles.portionLabel}>Quantity</Text>
           <View style={styles.quantitySelector}>
             <TouchableOpacity onPress={() => quantity > 1 && setQuantity(quantity - 1)} style={styles.quantityButton}>
               <Text style={styles.quantityButtonText}>-</Text>
@@ -75,18 +97,14 @@ export default function DetailScreen({ route, navigation }) {
         </View>
 
         {/* Bottom Bar */}
-        {/* <View style={styles.bottomBar}>
-          <View style={styles.priceContainer}>
-            <Text style={styles.priceLabel}>Price</Text>
-            <Text style={styles.price}>${(8.24 * quantity).toFixed(2)}</Text>
-          </View>
-          <TouchableOpacity style={styles.orderButton}>
+        <View style={styles.bottomBar}>
+          <TouchableOpacity style={styles.orderButton} onPress={placeOrder}>
             <Text style={styles.orderButtonText}>ORDER NOW</Text>
           </TouchableOpacity>
-        </View> */}
+        </View>
       </View>
     </ScrollView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
