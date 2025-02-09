@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react"
 import {
   View,
   Text,
@@ -9,63 +9,83 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import axios from "axios";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+  RefreshControl,
+} from "react-native"
+import { Ionicons, MaterialIcons } from "@expo/vector-icons"
+import { useNavigation } from "@react-navigation/native"
+import axios from "axios"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { LinearGradient } from "expo-linear-gradient"
 
 const RecommendationScreen = () => {
-  const navigation = useNavigation();
-  const [recommendations, setRecommendations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [phoneNumber, setPhoneNumber] = useState(null);
+  const navigation = useNavigation()
+  const [recommendations, setRecommendations] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [phoneNumber, setPhoneNumber] = useState(null)
 
   useEffect(() => {
-    getPhoneNumber();
-  }, []);
+    getPhoneNumber()
+  }, [])
 
   const getPhoneNumber = async () => {
     try {
-      const storedPhoneNumber = await AsyncStorage.getItem('phone_number');
+      const storedPhoneNumber = await AsyncStorage.getItem("phone_number")
       if (storedPhoneNumber) {
-        setPhoneNumber(storedPhoneNumber);
-        fetchRecommendations(storedPhoneNumber);
+        setPhoneNumber(storedPhoneNumber)
+        fetchRecommendations(storedPhoneNumber)
       } else {
-        Alert.alert('Error', 'Please login first');
-        navigation.navigate('SignIn');
+        Alert.alert("Error", "Please login first")
+        navigation.navigate("SignIn")
       }
     } catch (error) {
-      console.error('Error retrieving phone number:', error);
-      setLoading(false);
+      console.error("Error retrieving phone number:", error)
+      setLoading(false)
     }
-  };
+  }
 
   const fetchRecommendations = async (phone) => {
     try {
       const response = await axios.post("http://192.168.135.50:8000/recommend/", {
-        Phone_Number: phone, // Using phone number instead of user_id
+        Phone_Number: phone,
         num_recommendations: 2,
-      });
+      })
 
-      setRecommendations(response.data.recommended_items);
+      setRecommendations(response.data.recommended_items)
     } catch (error) {
-      console.error("Error fetching recommendations:", error);
-      Alert.alert('Error', 'Failed to fetch recommendations');
+      console.error("Error fetching recommendations:", error)
+      Alert.alert("Error", "Failed to fetch recommendations")
     } finally {
-      setLoading(false);
+      setLoading(false)
+      setRefreshing(false)
     }
-  };
+  }
 
-  const renderBurgerItem = ({ item }) => (
-    <View style={styles.burgerCard}>
+  const onRefresh = useCallback(() => {
+    setRefreshing(true)
+    fetchRecommendations(phoneNumber)
+  }, [phoneNumber, fetchRecommendations]) // Added fetchRecommendations to dependencies
+
+  const renderBurgerItem = ({ item, index }) => (
+    <TouchableOpacity style={styles.burgerCard}>
       <Image
-        source={require("../assets/images/berger.png")}
+        source={
+          index === 0
+            ? require("../assets/images/berger.png")
+            : require("../assets/images/hot-chocolate.jpg")
+        }
         style={styles.burgerImage}
       />
-      <Text style={styles.burgerName}>{item.menu_name}</Text>
-    </View>
-  );
+      <LinearGradient colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.7)"]} style={styles.gradientOverlay}>
+        <Text style={styles.burgerName}>{item.menu_name}</Text>
+        {/* <View style={styles.ratingContainer}>
+          <Ionicons name="star" size={16} color="#FFD700" />
+          <Text style={styles.ratingText}>{item.similarity_score.toFixed(1)}</Text>
+        </View> */}
+      </LinearGradient>
+    </TouchableOpacity>
+  )
+  
 
   return (
     <View style={styles.mainContainer}>
@@ -75,6 +95,7 @@ const RecommendationScreen = () => {
         keyExtractor={(item) => item.menu_id.toString()}
         numColumns={2}
         contentContainerStyle={styles.flatListContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#ff4757"]} />}
         ListHeaderComponent={
           <>
             <View style={styles.header}>
@@ -87,35 +108,49 @@ const RecommendationScreen = () => {
             <View style={styles.searchContainer}>
               <View style={styles.searchBar}>
                 <Ionicons name="search" size={20} color="#666" />
-                <TextInput placeholder="Search" style={styles.searchInput} />
+                <TextInput placeholder="Search for food..." style={styles.searchInput} />
               </View>
               <TouchableOpacity style={styles.filterButton}>
-                <Ionicons name="menu" size={24} color="#fff" />
+                <Ionicons name="options-outline" size={24} color="#fff" />
               </TouchableOpacity>
             </View>
 
-            {loading && <ActivityIndicator size="large" color="#ff4757" />}
+            <Text style={styles.saleTxt}>Today's Picks</Text>
+
+            {loading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#ff4757" />
+              </View>
+            )}
           </>
+        }
+        ListEmptyComponent={
+          !loading && (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="fast-food-outline" size={64} color="#ccc" />
+              <Text style={styles.emptyText}>No recommendations available</Text>
+            </View>
+          )
         }
       />
 
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
-          <Ionicons name="home" size={24} color="#666" />
+          <Ionicons name="home-outline" size={24} color="#666" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navButton}>
           <MaterialIcons name="recommend" size={24} color="#ff4757" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton}>
-          <Ionicons name="heart-outline" size={24} color="#666" />
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("OrderHistory")}>
+        <MaterialIcons name="shopping-cart" size={24} color="#666" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
-          <Ionicons name="person" size={24} color="#666" />
+          <Ionicons name="person-outline" size={24} color="#666" />
         </TouchableOpacity>
       </View>
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   mainContainer: {
@@ -135,9 +170,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logoText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#000",
+    color: "#ff4757",
   },
   subText: {
     color: "#666",
@@ -161,6 +196,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     marginLeft: 10,
+    fontSize: 16,
   },
   filterButton: {
     backgroundColor: "#ff4757",
@@ -174,9 +210,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     borderRadius: 15,
-    padding: 10,
     margin: 5,
-    elevation: 3,
+    overflow: "hidden",
+    elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -184,17 +220,45 @@ const styles = StyleSheet.create({
   },
   burgerImage: {
     width: "100%",
-    height: 120,
-    borderRadius: 10,
-    marginBottom: 10,
+    height: 180,
+    borderRadius: 15,
+  },
+  gradientOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "50%",
+    justifyContent: "flex-end",
+    padding: 10,
   },
   burgerName: {
     fontSize: 16,
     fontWeight: "bold",
+    color: "#fff",
     marginBottom: 4,
   },
-  footer: {
-    height: 20,
+  ratingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  ratingText: {
+    color: "#fff",
+    marginLeft: 4,
+    fontSize: 14,
+  },
+  loadingContainer: {
+    padding: 20,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 10,
   },
   bottomNav: {
     flexDirection: "row",
@@ -204,10 +268,21 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopWidth: 1,
     borderColor: "#ddd",
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   navButton: {
     padding: 10,
   },
-});
+  saleTxt: {
+    color: "#333",
+    fontSize: 24,
+    marginBottom: 15,
+    fontWeight: "bold",
+  },
+})
 
-export default RecommendationScreen;
+export default RecommendationScreen
+

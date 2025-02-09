@@ -118,8 +118,8 @@ const ProfileScreen = () => {
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Recommendation")}>
           <MaterialIcons name="recommend" size={24} color="#666" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton}>
-          <Ionicons name="heart-outline" size={24} color="#666" />
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("OrderHistory")}>
+        <MaterialIcons name="shopping-cart" size={24} color="#666" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navButton}>
           <Ionicons name="person" size={24} color="#ff4757" />

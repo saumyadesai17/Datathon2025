@@ -6,7 +6,7 @@ export default function SplashScreen({ navigation }) {
     useEffect(() => {
         setTimeout(() => {
           navigation.replace("SignIn")
-        }, 3000)
+        }, 10000)
       }, [navigation]) // Added navigation to dependencies
   return (
     <View style={styles.container}>
