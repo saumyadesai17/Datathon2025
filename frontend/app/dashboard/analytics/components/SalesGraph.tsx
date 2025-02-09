@@ -36,23 +36,21 @@ export default function SalesGraph({ data, isLoading, error }: SalesGraphProps) 
     const [timeFrame, setTimeFrame] = useState("monthly")
     const [chartType, setChartType] = useState("line")
 
-    const colors = ["#00f3ff", "#00ff9d", "#ff9900", "#ffdd00", "#ff33cc", "#ff6600", "#00ccff", "#ff0000"];
-
-    const formatDate = (date: string) => {
-        const parsedDate = new Date(date)
-        return `${String(parsedDate.getDate()).padStart(2, "0")}-${String(parsedDate.getMonth() + 1).padStart(
-            2,
-            "0",
-        )}-${parsedDate.getFullYear()}`
-    }
-
-    const getWeekNumber = (date: Date) => {
-        const startDate = new Date(date.getFullYear(), 0, 1)
-        const days = Math.floor((date.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000))
-        return Math.ceil((days + 1) / 7)
-    }
+    const colors = ["#00f3ff", "#00ff9d", "#ff9900", "#ffdd00", "#ff33cc", "#ff6600", "#00ccff", "#ff0000"]
 
     const formatSalesData = useMemo(() => {
+        // Define functions inside useMemo to avoid unnecessary re-renders
+        const formatDate = (date: string) => {
+            const parsedDate = new Date(date)
+            return `${String(parsedDate.getDate()).padStart(2, "0")}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${parsedDate.getFullYear()}`
+        }
+
+        const getWeekNumber = (date: Date) => {
+            const startDate = new Date(date.getFullYear(), 0, 1)
+            const days = Math.floor((date.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000))
+            return Math.ceil((days + 1) / 7)
+        }
+
         if (!data) return []
 
         const mergedSales: Record<string, any> = {}
@@ -83,7 +81,7 @@ export default function SalesGraph({ data, isLoading, error }: SalesGraphProps) 
         })
 
         return Object.values(mergedSales).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    }, [data, timeFrame, formatDate, getWeekNumber])
+    }, [data, timeFrame])
 
     if (error) {
         return <div className="text-red-500">Error loading sales data. Please try again later.</div>
@@ -211,4 +209,3 @@ export default function SalesGraph({ data, isLoading, error }: SalesGraphProps) 
         </motion.div>
     )
 }
-

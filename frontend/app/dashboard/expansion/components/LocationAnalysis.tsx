@@ -26,10 +26,6 @@ export default function LocationAnalysis() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchTopLocations();
-  }, []);
-
   const fetchTopLocations = async () => {
     try {
       setLoading(true);
@@ -50,6 +46,10 @@ export default function LocationAnalysis() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchTopLocations();
+  }, [fetchTopLocations]);
 
   const fetchCityAnalysis = async (cities: string[]) => {
     const results: CityAnalysis[] = [];

@@ -94,9 +94,9 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }} 
-        animate={{ opacity: 1, y: 0 }} 
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: 'easeInOut' }}
         className="glass-card w-full max-w-md p-8 rounded-xl"
       >
@@ -193,7 +193,7 @@ export default function AuthPage() {
           <div className="mt-6 text-center">
             {isLogin ? (
               <p className="text-gray-400">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <button onClick={() => setIsLogin(false)} className="text-[#00f3ff] hover:underline">
                   Sign up
                 </button>
