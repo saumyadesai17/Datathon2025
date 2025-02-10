@@ -8,7 +8,7 @@ export default function Hero() {
         <div className="absolute w-96 h-96 blur-3xl opacity-30 bg-[#00ff9d] rounded-full -bottom-48 -right-48"></div>
       </div>
       
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:mt-2em">
         <h1 className="text-5xl md:text-7xl font-bold mb-8">
           <span className="gradient-text">Transform Retail</span>
           <br />
