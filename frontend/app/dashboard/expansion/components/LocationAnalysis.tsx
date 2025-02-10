@@ -1,26 +1,3 @@
-'use client';
-
-import { useState, useEffect, useCallback, memo } from "react";
-import { Building2, MapPin, Store, Key, Trophy, Send } from "lucide-react";
-
-interface Competitor {
-  name: string;
-  location: string;
-}
-
-interface RentableShop {
-  name: string;
-  location: string;
-  rent_price: string;
-}
-
-interface CityAnalysis {
-  city: string;
-  competitors: Competitor[];
-  rentable_shops: RentableShop[];
-  cheapest_shop?: RentableShop;
-}
-
 // Memoized card components for better performance
 const CityCard = memo(({ data, onWhatsApp }: { 
   data: CityAnalysis; 
@@ -85,6 +62,9 @@ const CityCard = memo(({ data, onWhatsApp }: {
     </div>
   </div>
 ));
+
+// Set display name explicitly for the memoized CityCard component
+CityCard.displayName = "CityCard";
 
 const LoadingSkeleton = () => (
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -270,8 +250,8 @@ export default function LocationAnalysis() {
                 onClick={() => sendWhatsApp(cheapestOverall.location)}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#007acc] hover:bg-[#006bb3] rounded-lg text-white font-medium transition-colors duration-200"
               >
-                <Send className="w-4 h-4" />
-                Create Outlet
+                <Send className="w-5 h-5" />
+                Send WhatsApp Message
               </button>
             </div>
           )}
@@ -280,5 +260,3 @@ export default function LocationAnalysis() {
     </div>
   );
 }
-
-LocationAnalysis.displayName = "LocationAnalysis";  // Explicitly setting the display name
