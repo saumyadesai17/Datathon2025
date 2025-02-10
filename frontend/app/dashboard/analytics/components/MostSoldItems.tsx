@@ -24,7 +24,7 @@ const fetchMostSoldItems = async (): Promise<MostSoldItem[]> => {
   return Object.keys(data).map((outlet) => ({
     outlet,
     item: data[outlet]["Most Sold Item Name"],
-    quantity: data[outlet]["Count"],
+    quantity: data[outlet]["Count"] ?? 0, // Ensures quantity is always a number
   }))
 }
 
@@ -43,8 +43,7 @@ function GrowthCard({ value, borderColor }: { value: number; borderColor: string
     <div className={`glass-card p-4 rounded-lg border ${borderColor}`}>
       <p className="text-sm text-gray-400">Growth</p>
       <p className={`text-2xl font-bold mt-1 ${isPositive ? "text-[#00ff9d]" : "text-[#ff0055]"}`}>
-        {isPositive ? "+" : ""}
-        {isPositive ? "15%" : "5%"}
+        {isPositive ? "+" : ""}{isPositive ? "15%" : "5%"}
       </p>
     </div>
   )
@@ -73,16 +72,16 @@ function SkeletonLoader() {
 function MostSoldItemsContent() {
   const [activeIndex, setActiveIndex] = useState<number>(0)
 
-  const {
-    data: mostSoldItems,
-    isLoading,
-    error,
-  } = useQuery<MostSoldItem[], Error>("mostSoldItems", fetchMostSoldItems, {
-    staleTime: 60000, // 1 minute
-    cacheTime: 3600000, // 1 hour
-  })
+  const { data: mostSoldItems, isLoading, error } = useQuery<MostSoldItem[], Error>(
+    "mostSoldItems",
+    fetchMostSoldItems,
+    {
+      staleTime: 60000, // 1 minute
+      cacheTime: 3600000, // 1 hour
+    }
+  )
 
-  const activeItem = useMemo(() => mostSoldItems && mostSoldItems[activeIndex], [mostSoldItems, activeIndex])
+  const activeItem = useMemo(() => mostSoldItems?.[activeIndex], [mostSoldItems, activeIndex])
 
   if (error) {
     return <div className="text-red-500">Error loading data: {error.message}</div>
@@ -94,39 +93,39 @@ function MostSoldItemsContent() {
 
       {isLoading ? (
         <SkeletonLoader />
-      ) : (
-        mostSoldItems && (
-          <>
-            <div className="flex space-x-4 mb-6 overflow-x-auto pb-2">
-              {mostSoldItems.map((item, index) => (
-                <button
-                  key={item.outlet}
-                  onClick={() => setActiveIndex(index)}
-                  className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
-                    activeIndex === index
-                      ? "bg-gradient-to-r from-[#00f3ff]/20 to-[#00ff9d]/20 border border-[#00f3ff]/40"
-                      : "hover:bg-white/5"
-                  }`}
-                >
-                  {item.outlet}
-                </button>
-              ))}
-            </div>
+      ) : mostSoldItems && mostSoldItems.length > 0 ? (
+        <>
+          <div className="flex space-x-4 mb-6 overflow-x-auto pb-2">
+            {mostSoldItems.map((item, index) => (
+              <button
+                key={item.outlet}
+                onClick={() => setActiveIndex(index)}
+                className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                  activeIndex === index
+                    ? "bg-gradient-to-r from-[#00f3ff]/20 to-[#00ff9d]/20 border border-[#00f3ff]/40"
+                    : "hover:bg-white/5"
+                }`}
+              >
+                {item.outlet}
+              </button>
+            ))}
+          </div>
 
-            {activeItem && (
-              <div className="grid grid-cols-2 gap-6">
-                <InfoCard title="Item Name" value={activeItem.item} borderColor="border-[#00f3ff]/20" />
-                <InfoCard
-                  title="Quantity Sold"
-                  value={activeItem.quantity.toLocaleString()}
-                  borderColor="border-[#00ff9d]/20"
-                />
-                <InfoCard title="Revenue" value={`₹${activeItem.quantity * 5}`} borderColor="border-[#00f3ff]/20" />
-                <GrowthCard value={activeItem.quantity} borderColor="border-[#00ff9d]/20" />
-              </div>
-            )}
-          </>
-        )
+          {activeItem && (
+            <div className="grid grid-cols-2 gap-6">
+              <InfoCard title="Item Name" value={activeItem.item} borderColor="border-[#00f3ff]/20" />
+              <InfoCard
+                title="Quantity Sold"
+                value={activeItem.quantity?.toLocaleString() ?? "0"} // Prevents undefined errors
+                borderColor="border-[#00ff9d]/20"
+              />
+              <InfoCard title="Revenue" value={`₹${(activeItem.quantity ?? 0) * 5}`} borderColor="border-[#00f3ff]/20" />
+              <GrowthCard value={activeItem.quantity ?? 0} borderColor="border-[#00ff9d]/20" />
+            </div>
+          )}
+        </>
+      ) : (
+        <p className="text-gray-400">No data available</p>
       )}
     </div>
   )

@@ -563,7 +563,7 @@ def get_most_sold_item(file_path):
 
 @app.get("/most_sold_items")
 def most_sold_items():
-    DATA_DIR = os.path.abspath("DATA")
+    DATA_DIR = os.path.abspath("Data")
     dadar_file = os.path.join(DATA_DIR, "Dadar.csv")
     andheri_file = os.path.join(DATA_DIR, "Andheri.csv")
     borivali_file = os.path.join(DATA_DIR, "Borivali.csv")
