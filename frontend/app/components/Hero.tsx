@@ -9,7 +9,7 @@ export default function Hero() {
       </div>
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 className="text-5xl md:text-7xl font-bold mb-8 sm:mt-2em">
+        <h1 className="text-5xl md:text-7xl font-bold mb-8 mt-[3em]">
           <span className="gradient-text">Transform Retail</span>
           <br />
           with AI-Powered Insights
