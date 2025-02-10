@@ -1,3 +1,26 @@
+'use client';
+
+import { useState, useEffect, useCallback, memo } from "react";
+import { Building2, MapPin, Store, Key, Trophy, Send } from "lucide-react";
+
+interface Competitor {
+  name: string;
+  location: string;
+}
+
+interface RentableShop {
+  name: string;
+  location: string;
+  rent_price: string;
+}
+
+interface CityAnalysis {
+  city: string;
+  competitors: Competitor[];
+  rentable_shops: RentableShop[];
+  cheapest_shop?: RentableShop;
+}
+
 // Memoized card components for better performance
 const CityCard = memo(({ data, onWhatsApp }: { 
   data: CityAnalysis; 
