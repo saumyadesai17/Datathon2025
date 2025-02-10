@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Hero() {
   return (
     <div className="relative min-h-screen flex items-center justify-center hero-gradient">
@@ -19,9 +21,12 @@ export default function Hero() {
         </p>
         
         <div className="flex flex-col sm:flex-row gap-6 justify-center">
+          <Link href="/auth">
           <button className="bg-gradient-to-r from-[#00f3ff] to-[#00ff9d] text-black font-bold px-8 py-4 rounded-lg text-lg hover:opacity-90 transition-opacity">
             Request Demo
           </button>
+
+          </Link>
           <button className="glass-card px-8 py-4 rounded-lg text-lg border border-[#00f3ff] hover:bg-[#00f3ff]/10 transition-colors">
             Learn More
           </button>
