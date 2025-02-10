@@ -1,4 +1,3 @@
-/* eslint-disable react/display-name */
 'use client';
 
 import { useState, useEffect, useCallback, memo } from "react";
@@ -281,3 +280,5 @@ export default function LocationAnalysis() {
     </div>
   );
 }
+
+LocationAnalysis.displayName = "LocationAnalysis";  // Explicitly setting the display name
