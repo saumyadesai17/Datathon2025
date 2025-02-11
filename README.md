@@ -40,7 +40,7 @@ RetailAI is an AI-powered retail analytics platform that provides valuable insig
 
 The RetailAI project is deployed and fully operational.
 
-The entire project (frontend + backend) is deployed and accessible at [your-deployed-project-link](https://retailai.vercel.app/). The frontend is hosted on [Vercel](https://vercel.com), and the backend is hosted on [Render](https://render.com).
+The entire project (frontend + backend) is deployed and accessible at [retailai.vercel.app](https://retailai.vercel.app/). The frontend is hosted on [Vercel](https://vercel.com), and the backend is hosted on [Render](https://render.com).
 
 Please note that since both frontend and backend are hosted on free-tier services, there may be occasional delays in response time or website functionality due to the limitations of these services. This may be more noticeable during peak usage times.
 
@@ -49,8 +49,8 @@ Both services offer scalable solutions, and upgrading to paid plans can ensure i
 ### Local Deployment
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/RetailAI.git
-   cd RetailAI
+   git clone https://github.com/saumyadesai17/Datathon2025.git
+   cd Datathon2025
    ```
 2. Install dependencies:
    ```bash
