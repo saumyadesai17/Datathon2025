@@ -18,7 +18,8 @@ interface BackendResponse {
 }
 
 const fetchMostSoldItems = async (): Promise<MostSoldItem[]> => {
-  const response = await fetch("/api/most-sold-items")
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+  const response = await fetch(`${backendUrl}/most_sold_items`)
   const data: BackendResponse = await response.json()
 
   return Object.keys(data).map((outlet) => ({

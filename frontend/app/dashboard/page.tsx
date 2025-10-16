@@ -15,7 +15,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get<OutletSales[]>('/api/total-sales')
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+    axios.get<OutletSales[]>(`${backendUrl}/get_total_sales/`)
       .then(response => {
         setSalesData(response.data);
         setLoading(false);

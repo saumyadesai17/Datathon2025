@@ -113,7 +113,8 @@ export default function LocationAnalysis() {
 
   const fetchTopLocations = useCallback(async () => {
     try {
-      const res = await fetch("/api/missing-locations");
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+      const res = await fetch(`${backendUrl}/get_missing_locations`);
       if (!res.ok) throw new Error("Failed to fetch locations");
       const data = await res.json();
 
@@ -136,7 +137,8 @@ export default function LocationAnalysis() {
     await Promise.all(
       cities.map(async (city) => {
         try {
-          const res = await fetch("/api/analyze-location", {
+          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+          const res = await fetch(`${backendUrl}/analyze-location`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ city }),
@@ -194,8 +196,9 @@ export default function LocationAnalysis() {
 
   const sendWhatsApp = async (city: string) => {
     try {
-      const res = await fetch(`/api/send-whatsapp?city=${city}`, {
-        method: "GET",
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+      const res = await fetch(`${backendUrl}/send_whatsapp?city=${city}`, {
+        method: "POST",
       });
 
       if (!res.ok) throw new Error("Failed to send WhatsApp message");

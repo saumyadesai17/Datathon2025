@@ -70,9 +70,10 @@ export default function OutletMap() {
 
     const fetchLocations = useCallback(async () => {
         try {
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
             const [outletResponse, predictedResponse] = await Promise.all([
-                fetch("/api/location"),
-                fetch("/api/missing-locations"),
+                fetch(`${backendUrl}/get_location/`),
+                fetch(`${backendUrl}/get_missing_locations/`),
             ])
 
             const outletData: { locations: OutletLocation[] } = await outletResponse.json()

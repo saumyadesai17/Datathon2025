@@ -16,7 +16,8 @@ export default function WaitingTimes() {
   useEffect(() => {
     const fetchWaitingTimes = async () => {
       try {
-        const response = await fetch("/api/waiting-times")
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+        const response = await fetch(`${backendUrl}/get_waiting`)
         const data: Record<string, unknown> = await response.json()
 
         // Transform API response into array format

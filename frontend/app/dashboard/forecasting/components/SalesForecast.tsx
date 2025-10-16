@@ -27,7 +27,8 @@ export default function SalesForecast() {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const response = await fetch("/api/forecast")
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+        const response = await fetch(`${backendUrl}/forecast`)
         const data = await response.json()
 
         const outletData = data.forecast[selectedOutlet]

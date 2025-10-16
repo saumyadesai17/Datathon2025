@@ -4,7 +4,8 @@ import { useQuery } from "react-query"
 import SalesGraph from "./SalesGraph"
 
 const fetchSalesData = async () => {
-  const response = await fetch("/api/process-data")
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+  const response = await fetch(`${backendUrl}/process-data`)
   if (!response.ok) {
     throw new Error("Network response was not ok")
   }
