@@ -71,8 +71,8 @@ export default function OutletMap() {
     const fetchLocations = useCallback(async () => {
         try {
             const [outletResponse, predictedResponse] = await Promise.all([
-                fetch("https://datathon2025.onrender.com/get_location/"),
-                fetch("https://datathon2025.onrender.com/get_missing_locations/"),
+                fetch("/api/location"),
+                fetch("/api/missing-locations"),
             ])
 
             const outletData: { locations: OutletLocation[] } = await outletResponse.json()
@@ -108,7 +108,7 @@ export default function OutletMap() {
 
     useEffect(() => {
         fetchLocations()
-    }, [fetchLocations])
+    }, [fetchLocations]) // Only run once on mount
 
     const togglePredicted = useCallback(() => setShowPredicted((prev) => !prev), [])
 

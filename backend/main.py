@@ -101,6 +101,14 @@ class CityRequest(BaseModel):
 
 app = FastAPI()
 
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the RetailAI Backend! 🚀"}
+
+@app.get("/ping")
+async def ping():
+    return {"status": "ok", "message": "Backend is up and running!"}
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,

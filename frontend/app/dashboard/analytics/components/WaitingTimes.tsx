@@ -16,7 +16,7 @@ export default function WaitingTimes() {
   useEffect(() => {
     const fetchWaitingTimes = async () => {
       try {
-        const response = await fetch("https://datathon2025.onrender.com/get_waiting")
+        const response = await fetch("/api/waiting-times")
         const data: Record<string, unknown> = await response.json()
 
         // Transform API response into array format

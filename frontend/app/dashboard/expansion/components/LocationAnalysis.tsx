@@ -113,7 +113,7 @@ export default function LocationAnalysis() {
 
   const fetchTopLocations = useCallback(async () => {
     try {
-      const res = await fetch("https://datathon2025.onrender.com/get_missing_locations");
+      const res = await fetch("/api/missing-locations");
       if (!res.ok) throw new Error("Failed to fetch locations");
       const data = await res.json();
 
@@ -136,7 +136,7 @@ export default function LocationAnalysis() {
     await Promise.all(
       cities.map(async (city) => {
         try {
-          const res = await fetch("https://datathon2025.onrender.com/analyze-location", {
+          const res = await fetch("/api/analyze-location", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ city }),
@@ -190,12 +190,12 @@ export default function LocationAnalysis() {
     };
 
     initializeData();
-  }, [fetchTopLocations, fetchCityAnalysis]);
+  }, [fetchTopLocations, fetchCityAnalysis]); // Only run once on mount
 
   const sendWhatsApp = async (city: string) => {
     try {
-      const res = await fetch(`https://datathon2025.onrender.com/send_whatsapp?city=${city}`, {
-        method: "POST",
+      const res = await fetch(`/api/send-whatsapp?city=${city}`, {
+        method: "GET",
       });
 
       if (!res.ok) throw new Error("Failed to send WhatsApp message");

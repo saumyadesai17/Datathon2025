@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useQuery, QueryClient, QueryClientProvider } from "react-query"
+import { useQuery } from "react-query"
 
 interface MostSoldItem {
   outlet: string
@@ -18,7 +18,7 @@ interface BackendResponse {
 }
 
 const fetchMostSoldItems = async (): Promise<MostSoldItem[]> => {
-  const response = await fetch("https://datathon2025.onrender.com/most_sold_items")
+  const response = await fetch("/api/most-sold-items")
   const data: BackendResponse = await response.json()
 
   return Object.keys(data).map((outlet) => ({
@@ -131,12 +131,6 @@ function MostSoldItemsContent() {
   )
 }
 
-const queryClient = new QueryClient()
-
 export default function MostSoldItems() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <MostSoldItemsContent />
-    </QueryClientProvider>
-  )
+  return <MostSoldItemsContent />
 }
